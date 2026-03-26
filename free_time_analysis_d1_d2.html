@@ -1,0 +1,338 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{padding:1rem 0;font-family:var(--font-sans)}
+.tab-bar{display:flex;gap:6px;margin-bottom:1.5rem;flex-wrap:wrap}
+.tab{padding:6px 16px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:transparent;font-size:13px;cursor:pointer;color:var(--color-text-secondary)}
+.tab.active{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-primary);font-weight:500}
+.day{display:none}
+.day.active{display:block}
+
+/* free time banner */
+.free-banner{background:var(--color-background-success);border:0.5px solid var(--color-border-success);border-radius:var(--border-radius-lg);padding:14px 18px;margin-bottom:1.5rem}
+.free-banner .label{font-size:11px;font-weight:500;color:var(--color-text-success);letter-spacing:0.05em;margin-bottom:4px}
+.free-banner .hours{font-size:28px;font-weight:500;color:var(--color-text-success)}
+.free-banner .sub{font-size:13px;color:var(--color-text-success);margin-top:2px;opacity:0.8}
+
+/* timeline */
+.tl{position:relative;padding-left:22px}
+.tl::before{content:'';position:absolute;left:7px;top:10px;bottom:10px;width:1px;background:var(--color-border-tertiary)}
+.ev{position:relative;margin-bottom:8px}
+.ev::before{content:'';position:absolute;left:-18px;top:13px;width:8px;height:8px;border-radius:50%;background:var(--color-border-secondary)}
+.ev.fixed::before{background:#3C3489}
+.ev.transit::before{background:#BA7517}
+.ev.free::before{background:#1D9E75;width:10px;height:10px;left:-19px;top:12px}
+.ev.warn::before{background:#E24B4A}
+
+.card{border-radius:var(--border-radius-md);padding:10px 14px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary)}
+.card.fixed{border-left:2.5px solid #7F77DD}
+.card.transit{border-left:2.5px solid #BA7517}
+.card.free{border-left:2.5px solid #1D9E75;background:var(--color-background-success)}
+.card.warn{border-left:2.5px solid #E24B4A;background:var(--color-background-danger)}
+.card.buf{border-left:2.5px solid var(--color-border-secondary);background:var(--color-background-secondary)}
+
+.row{display:flex;align-items:flex-start;gap:10px}
+.tc{min-width:50px;font-size:13px;font-weight:500;color:var(--color-text-primary);padding-top:1px;flex-shrink:0}
+.cc{flex:1}
+.ttl{font-size:14px;font-weight:500;color:var(--color-text-primary);line-height:1.4}
+.sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px;line-height:1.6}
+.sub.ok{color:var(--color-text-success)}
+.badge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:10px;margin-right:4px;margin-top:4px}
+.b-g{background:#E1F5EE;color:#0F6E56}
+.b-a{background:#FAEEDA;color:#854F0B}
+.b-p{background:#EEEDFE;color:#3C3489}
+.b-r{background:var(--color-background-danger);color:var(--color-text-danger)}
+
+.section-h{font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--color-text-tertiary);margin:1.2rem 0 8px}
+
+/* activity grid */
+.act-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.act-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px}
+.act-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.act-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.act-dist{font-size:11px;color:var(--color-text-tertiary)}
+.act-desc{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+
+.insight-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px;margin-top:12px;font-size:13px;color:var(--color-text-secondary);line-height:1.7}
+.insight-box b{color:var(--color-text-primary);font-weight:500}
+</style>
+
+<div class="wrap">
+<div class="tab-bar">
+  <button class="tab active" onclick="show('d1')">6/18 후쿠오카</button>
+  <button class="tab" onclick="show('d2')">6/19 이동일</button>
+  <button class="tab" onclick="show('transport')">잇코텐 이동 방법</button>
+</div>
+
+<div id="d1" class="day active">
+
+  <div class="free-banner">
+    <div class="label">✦ 6/18 실제 자유 시간</div>
+    <div class="hours">약 6.5시간</div>
+    <div class="sub">15:00 체크인 후 ~ 취침 전까지 · 하카타/텐진 도보권</div>
+  </div>
+
+  <div class="section-h">역산 타임라인</div>
+  <div class="tl">
+    <div class="ev transit">
+      <div class="card transit">
+        <div class="row">
+          <div class="tc">13:40</div>
+          <div class="cc">
+            <div class="ttl">후쿠오카 공항 국제선 도착</div>
+            <div class="sub">입국심사 + 수하물 수취 예상 약 25~35분 소요</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ev transit">
+      <div class="card transit">
+        <div class="row">
+          <div class="tc">14:10</div>
+          <div class="cc">
+            <div class="ttl">공항 출발 → 하카타 이동</div>
+            <div class="sub">방법 A: 셔틀버스(15분) + 지하철(5분) = 약 20분, 260엔<br>방법 B: 공항 직행버스 → 하카타 버스터미널 = 약 20분, 260엔</div>
+            <span class="badge b-a">260엔 / 인</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ev warn">
+      <div class="card warn">
+        <div class="row">
+          <div class="tc">14:30</div>
+          <div class="cc">
+            <div class="ttl">오리엔탈 호텔 도착 (체크인 30분 전)</div>
+            <div class="sub">체크인 공식 시간 15:00 — 30분 이른 도착<br>대부분 프런트에서 짐 맡아주고 일찍 체크인 가능 여부 확인 가능<br>짐만 맡기고 바로 주변 이동 가능 (하카타역 도보권)</div>
+            <span class="badge b-r">체크인 15:00</span><span class="badge b-a">짐 보관 요청</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ev free">
+      <div class="card free">
+        <div class="row">
+          <div class="tc">14:30~<br>22:00</div>
+          <div class="cc">
+            <div class="ttl">✦ 자유 시간 — 약 7.5시간 (짐 맡긴 경우)</div>
+            <div class="sub ok">정식 체크인 후 자유 시간: 15:00~ = 약 6.5시간<br>짐 보관 후 조기 출발 시: 14:30~ = 약 7.5시간</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-h">6/18 추천 활동 (하카타 · 텐진)</div>
+  <div class="act-grid">
+    <div class="act-card">
+      <div class="act-top"><span class="act-name">캐널시티 하카타</span><span class="act-dist">호텔 도보 5분</span></div>
+      <div class="act-desc">쇼핑몰 + 분수쇼. 입장 무료. 도착 직후 짐 맡기고 바로 이동 가능</div>
+    </div>
+    <div class="act-card">
+      <div class="act-top"><span class="act-name">나카스 야타이</span><span class="act-dist">도보 10분</span></div>
+      <div class="act-desc">후쿠오카 명물 포장마차 거리. 저녁 17:00~부터 영업 시작</div>
+    </div>
+    <div class="act-card">
+      <div class="act-top"><span class="act-name">텐진 지하상가</span><span class="act-dist">지하철 1정거장</span></div>
+      <div class="act-desc">600m 지하 쇼핑가. 식사 + 쇼핑. 저녁 20:00까지</div>
+    </div>
+    <div class="act-card">
+      <div class="act-top"><span class="act-name">이치란 라멘 본점</span><span class="act-dist">나카스카와바타역</span></div>
+      <div class="act-desc">후쿠오카 대표 라멘. 24시간 운영. 저녁 식사로 강추</div>
+    </div>
+    <div class="act-card">
+      <div class="act-top"><span class="act-name">하카타 기온 야마카사</span><span class="act-dist">도보 10분</span></div>
+      <div class="act-desc">6월 유명 마츠리 기간! 야마카사 장식물 전시 관람 가능</div>
+    </div>
+    <div class="act-card">
+      <div class="act-top"><span class="act-name">스미요시 신사</span><span class="act-dist">도보 15분</span></div>
+      <div class="act-desc">하카타 도심 속 고즈넉한 신사. 산책 코스</div>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    💡 <b>앱 인사이트 ①</b> — 체크인 전 짐 보관 가능 여부를 자동으로 호텔에 확인 요청하는 기능이 있으면 유용. 대부분의 호텔은 가능하지만 명시적으로 안내해주지 않아 여행객이 놓치는 부분.
+  </div>
+</div>
+
+<div id="d2" class="day">
+
+  <div class="free-banner">
+    <div class="label">✦ 6/19 유후인 자유 시간</div>
+    <div class="hours">13:30 ~ 15:00 = 1.5시간</div>
+    <div class="sub">버스 도착 후 체크인 전 유노츠보 거리 탐방 가능</div>
+  </div>
+
+  <div class="section-h">역산 타임라인 — 버스 시간대별 시나리오</div>
+
+  <div class="card buf" style="margin-bottom:14px;padding:12px 14px;">
+    <div style="font-size:12px;color:var(--color-text-secondary);line-height:2;">
+      <b style="color:var(--color-text-primary);">잇코텐 체크인 15:00</b> 기준 역산<br>
+      유후인 에키마에 도착 → 택시 5분 → 잇코텐<br>
+      하카타 버스터미널 출발 → 약 2시간 소요 → 유후인 도착<br>
+      → <b style="color:var(--color-text-primary);">13:00 이전 버스 탑승 시 체크인 여유 확보</b>
+    </div>
+  </div>
+
+  <div class="tl">
+    <div class="ev fixed">
+      <div class="card fixed">
+        <div class="row">
+          <div class="tc">11:00</div>
+          <div class="cc">
+            <div class="ttl">오리엔탈 호텔 체크아웃</div>
+            <div class="sub">도보 5분 → 하카타 버스터미널 3층 34번 플랫폼</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ev free">
+      <div class="card free">
+        <div class="row">
+          <div class="tc">★ 11:30</div>
+          <div class="cc">
+            <div class="ttl">✦ 권장 — 11:30 버스 탑승</div>
+            <div class="sub ok">도착 13:30 → 택시 5분 → 잇코텐 13:35 도착<br>체크인까지 여유 1시간 25분 → 유노츠보 거리 탐방 가능</div>
+            <span class="badge b-g">여유 1시간 25분</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ev transit">
+      <div class="card transit">
+        <div class="row">
+          <div class="tc">12:30</div>
+          <div class="cc">
+            <div class="ttl">대안 — 12:30 버스 탑승</div>
+            <div class="sub">도착 14:30 → 택시 5분 → 잇코텐 14:35<br>체크인까지 25분 여유만 남음 (짐 보관 후 산책 제한적)</div>
+            <span class="badge b-a">여유 25분</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ev warn">
+      <div class="card warn">
+        <div class="row">
+          <div class="tc">13:00~</div>
+          <div class="cc">
+            <div class="ttl">비추천 — 13:00 이후 버스 탑승</div>
+            <div class="sub">도착 15:00~ → 체크인 시간과 맞물려 혼잡<br>짐 싣고 내리는 시간 + 택시 대기 고려하면 15:00 초과 가능성</div>
+            <span class="badge b-r">체크인 시간 초과 위험</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ev transit">
+      <div class="card transit">
+        <div class="row">
+          <div class="tc">13:30</div>
+          <div class="cc">
+            <div class="ttl">유후인 에키마에 버스센터 도착 (11:30 탑승 기준)</div>
+            <div class="sub">↓ 택시 탑승 (버스센터 앞 택시 승강장)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ev transit">
+      <div class="card transit">
+        <div class="row">
+          <div class="tc">13:35</div>
+          <div class="cc">
+            <div class="ttl">잇코텐 도착 — 짐 보관 후 자유 시간</div>
+            <div class="sub">체크인 15:00 전 짐 맡기고 유노츠보 거리 도보 탐방 가능<br>버스센터 → 유노츠보 거리 → 긴린코 호수 → 잇코텐 순환</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ev free">
+      <div class="card free">
+        <div class="row">
+          <div class="tc">15:00</div>
+          <div class="cc">
+            <div class="ttl">✦ 잇코텐 체크인</div>
+            <div class="sub ok">이후 온천 + 저녁 식사 + 유후인 야경<br>잇코텐 독채 객실 반노천탕 즐기기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    💡 <b>앱 인사이트 ②</b> — "이동수단 탑승 시간대별 도착 여유 계산기": 버스 시간표를 연동해 각 탑승 시간대별로 체크인 전 여유 시간을 자동 계산 후 가장 여유로운 시간대를 추천하는 기능.
+  </div>
+</div>
+
+<div id="transport" class="day">
+
+  <div class="free-banner">
+    <div class="label">✦ 유후인 에키마에 버스센터 → 잇코텐</div>
+    <div class="hours">택시 5분 · 약 700~1,000엔</div>
+    <div class="sub">공식 홈페이지 명시 · 도보 불가 (약 3.2km + 캐리어)</div>
+  </div>
+
+  <div class="section-h">이동 수단 비교</div>
+
+  <div class="card fixed" style="margin-bottom:8px;border-left-color:#1D9E75">
+    <div class="row">
+      <div class="tc" style="color:#0F6E56;font-size:18px;">★</div>
+      <div class="cc">
+        <div class="ttl">택시 — 강력 추천</div>
+        <div class="sub">소요 약 5분 · 요금 약 700~1,000엔 (2인 동일 요금)<br>버스센터 앞 택시 승강장에서 바로 탑승 가능<br>캐리어 트렁크 적재 가능 · 일본 택시 기사 주소 카드 보여주면 OK</div>
+        <span class="badge b-g">2인 분담 시 1인 350~500엔</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card buf" style="margin-bottom:8px;">
+    <div class="row">
+      <div class="tc" style="color:var(--color-text-secondary);">△</div>
+      <div class="cc">
+        <div class="ttl">도보 — 비추천</div>
+        <div class="sub">약 3.2km · 소요 약 40~45분<br>캐리어 끌고 이동 시 오르막 구간 있어 매우 힘듦<br>짐 없이 산책 목적이라면 가능 (주변 경치 좋음)</div>
+        <span class="badge b-r">캐리어 있을 시 비추천</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card buf" style="margin-bottom:12px;">
+    <div class="row">
+      <div class="tc" style="color:var(--color-text-secondary);">△</div>
+      <div class="cc">
+        <div class="ttl">자전거 렌탈 — 여유 있을 때 고려</div>
+        <div class="sub">유후인역 앞 렌탈샵 운영 · 짐은 버스센터에 유료 보관 후 별도 이동<br>유후인 관광 중 자전거 이동은 인기 코스</div>
+        <span class="badge b-a">짐 분리 필요</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-h">택시 탑승 팁</div>
+  <div class="card buf">
+    <div style="font-size:13px;color:var(--color-text-secondary);line-height:2;">
+      주소 카드 준비: <b style="color:var(--color-text-primary);">302-7 Kawakami, Yufuin-cho, Yufu · 一壷天</b><br>
+      전화번호: <b style="color:var(--color-text-primary);">+81977268815</b> (택시 기사에게 보여주면 OK)<br>
+      결제: 현금 준비 권장 (일본 지방 택시 카드 안 되는 경우 있음)<br>
+      송영 서비스: ❌ 잇코텐 공식 홈페이지 명시 — 자체 픽업 없음
+    </div>
+  </div>
+
+  <div class="insight-box">
+    💡 <b>앱 인사이트 ③</b> — 숙소 도착 마지막 구간(버스/기차역→숙소)의 이동수단과 소요시간을 자동으로 파악해 체크인 타임라인에 반영. "역에서 택시 5분" 같은 정보가 빠지면 전체 역산이 틀어짐.
+  </div>
+</div>
+
+</div>
+
+<script>
+function show(id){
+  document.querySelectorAll('.day').forEach(d=>d.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>

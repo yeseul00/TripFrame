@@ -1,0 +1,20 @@
+{
+  "name": "@tripframe/core",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.x",
+    "jest": "^29.x",
+    "ts-jest": "^29.x",
+    "typescript": "^5.x"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0"
+  }
+}

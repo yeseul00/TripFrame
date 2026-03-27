@@ -32,3 +32,16 @@ pnpm-debug.log*
 # Cache
 .turbo/
 .cache/
+
+# Testing
+test-results/
+playwright-report/
+coverage/
+*.tsbuildinfo
+
+# Expo
+.expo/
+.expo-shared/
+
+# Obsidian
+.obsidian/

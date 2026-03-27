@@ -7,7 +7,8 @@ import { GapAnalysisScreen } from './src/screens/GapAnalysisScreen';
 import { ReverseCalcDetailScreen } from './src/screens/ReverseCalcDetailScreen';
 import './global.css';
 
-const TABS = ['일정', '공백감지', '제안카드', '역산'];
+const TABS = ['일정', '공백감지', '제안카드', '역산'] as const;
+type TabName = (typeof TABS)[number];
 
 export default function App() {
   const currentTab = useTripStore((state) => state.currentTab);

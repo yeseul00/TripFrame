@@ -127,41 +127,56 @@ console.log(gaps.filter(g => g.severity === 'DANGER').length) // → 2
 
 ### 시나리오 1: 출발 당일 타임라인
 ```
-기대 결과:
-일정 탭 → Day1 선택
-→ 09:15 합정동 출발 [역산]
-→ 10:45 카운터 도착 권장 [역산] + 경고 색상
-→ 12:15 LJ263 출발 [확정]
-→ 13:40 후쿠오카 도착 [확정]
-→ 14:10 공항→하카타 [확정]
-→ 15:00 오리엔탈 호텔 체크인 [확정]
-→ 15:00~ 자유 시간 [FREE]
+기대 결과 (실제 mock.ts 기준):
+일정 탭 → Day 1 선택
+→ 09:15 집 출발 [type: home, isDerived: true, status: ok]
+→ 12:15 후쿠오카행 비행기 (OZ132) [type: flight, status: ok]
+→ 15:30 호텔 체크인 - 미야코 호텔 하카타 [type: hotel, status: ok]
+→ 18:30 저녁 식사 - 야키니쿠 챔피언 [type: activity, status: ok]
+
+타입 사용 패턴:
+- 'home': 역산 엔진의 최종 결과 (집 출발 시점)
+- isDerived: true로 역산 생성 이벤트 표시
+- metadata: { steps: ReverseCalcStep[] } 역산 단계 정보 저장
 ```
 
 ### 시나리오 2: 공백 감지
 ```
-기대 결과:
+기대 결과 (실제 mock.ts 기준):
 공백 탭
-→ GapCard 1: "하카타→유후인 이동 수단 없음" (DANGER, 빨강)
-  → 탭 → 유후인호 버스 옵션 (추천), 유후인노모리 (즉시매진)
-  → "예약 오픈 5/20 08:00" 배지
-→ GapCard 2: "유후인→후쿠오카공항 이동 수단 없음" (DANGER, 빨강)
-  → 탭 → 공항 직행 버스 옵션 (추천)
-→ GapCard 3: "버스센터→잇코텐 구간 자동 삽입" (AUTO, 초록)
-  → 탭 → 택시(추천), 도보(비추천)
+→ GapCard 1 (Day 2): "하카타에서 유후인으로 이동하는 수단이 없습니다"
+   - severity: 'DANGER'
+   - type: 'transport'
+   - suggestions: ['유후인노모리 예약', '고속버스 예약', '렌터카']
+
+→ GapCard 2 (Day 3): "유후인에서 공항으로 이동하는 수단이 없습니다"
+   - severity: 'DANGER'
+   - type: 'transport'
+
+알려진 한계 (TC-010):
+- 마지막 구간 (transport 하차 → 다른 위치) 감지 미지원
+- 예: 버스센터(13:30, transport) → 잇코텐(15:00, hotel)
+  현재: OK (90분 버퍼) / 기대: DANGER (이동수단 없음)
 ```
 
 ### 시나리오 3: 역산 계산
 ```
-기대 결과:
+기대 결과 (실제 MOCK_REVERSE_CALC 기준):
 역산 탭
-→ Anchor: LJ263 12:15
-→ Step1: 수속 마감 11:25 (출발 50분 전 · 빨강)
-→ Step2: 카운터 권장 10:45 (마감 40분 전 여유)
-→ Step3: 공항버스 소요 −75분 (노랑)
-→ Step4: 합정역 탑승 09:20
-→ Step5: 집 출발 09:15 (보라 · 굵게)
-→ 결과 카드: 09:15 (버스) / 09:40 (철도)
+→ anchorTime: "12:15" (비행기 출발)
+
+→ steps:
+   1. 공항 체크인 (50분) [type: checkin]
+   2. 공항 이동 버스 (75분) [type: transport]
+   3. 집에서 버스정류장 여유 (40분) [type: buffer]
+   4. 외출 준비 (15분) [type: prep]
+
+→ calculatedTime: "09:15" (집 출발)
+
+ReverseCalcStep 타입 사용:
+- type: 'buffer' | 'transport' | 'prep' | 'checkin'
+- durationMinutes: 소요 시간
+- 'prep' 타입으로 준비 시간 명시적 표현
 ```
 
 ### 시나리오 4: 경제성 비교
@@ -210,6 +225,128 @@ console.log(gaps.filter(g => g.severity === 'DANGER').length) // → 2
 - [ ] `any` 타입 0개
 - [ ] 50줄 초과 함수 없음
 - [ ] 컴포넌트에서 core engine 직접 import 없음 (반드시 hook 경유)
+
+---
+
+## Known Limitations & TODO
+
+### TC-010: 마지막 구간 감지 미지원 (TASK-029-A)
+
+**현황**: 미구현
+**원인**: transport 이벤트가 있으면 이후 숙소까지의 이동을 감지하지 못함
+
+**재현 시나리오**:
+```
+버스센터(13:30, transport) → 잇코텐(15:00, hotel)
+현재: OK (90분 버퍼)
+기대: DANGER (버스 하차 후 잇코텐까지 이동수단 없음)
+```
+
+**해결 방법**:
+```typescript
+// packages/core/src/engine/gap-detector.ts
+// "교통편 하차 후 목적지" 로직 추가
+if (event.type === 'transport' && nextEvent.type === 'hotel') {
+  // 하차 위치와 숙소 위치가 다르면 DANGER
+  if (event.location.name !== nextEvent.location.name) {
+    gaps.push({
+      severity: 'DANGER',
+      message: `${event.location.name} 하차 후 ${nextEvent.location.name}까지 이동수단 없음`,
+      // ...
+    });
+  }
+}
+```
+
+**테스트 케이스**: TF-TC-001 § TC-010
+
+---
+
+### TC-016, TC-017: 자유시간 계산 미구현 (TASK-029-B)
+
+**현황**: `calculateFreeTime()` 함수 없음
+**원인**: packages/core에 미구현
+
+**요구사항** (REQ-FR-011~013):
+- 도착 시간 ~ 체크인 시간 사이 분 단위 계산
+- 30분 미만 시 노란색 경고
+- "체크인 전 짐 보관 가능 여부" 자동 질문 생성
+
+**해결 방법**:
+```typescript
+// packages/core/src/engine/free-time.ts (NEW)
+export interface FreeTimeResult {
+  minutes: number;
+  startTime: string;  // "HH:MM"
+  endTime: string;    // "HH:MM"
+  warning?: string;   // 30분 미만 시 경고 메시지
+}
+
+export function calculateFreeTime(
+  arrivalTime: string,
+  checkInTime: string
+): FreeTimeResult {
+  const arrival = parseTime(arrivalTime);
+  const checkIn = parseTime(checkInTime);
+  const minutes = (checkIn - arrival) / (1000 * 60);
+
+  return {
+    minutes,
+    startTime: arrivalTime,
+    endTime: checkInTime,
+    warning: minutes < 30
+      ? `체크인까지 ${minutes}분밖에 없어요. 짐 보관 가능 여부를 확인하세요.`
+      : undefined,
+  };
+}
+```
+
+**테스트 케이스**: TF-TC-001 § TC-016, TC-017
+
+---
+
+### E2E 테스트 셀렉터 안정성 (TASK-030)
+
+**현황**: `getByText()` 사용으로 UI 텍스트 변경 시 테스트 깨짐
+**권장**: `testID` prop 사용
+
+**개선 방법**:
+```typescript
+// Before
+await expect(page.getByText('09:15')).toBeVisible();
+
+// After
+<Text testID="reverse-calc-result">{result.homeDepart}</Text>
+await expect(page.getByTestId('reverse-calc-result')).toHaveText('09:15');
+```
+
+**testID 규칙**:
+- `timeline-item-{event.id}`: 타임라인 아이템
+- `gap-card-{gap.id}`: 공백 카드
+- `reverse-calc-result`: 역산 결과
+- `reverse-calc-step-{index}`: 역산 단계
+
+---
+
+### Phase 2 선행 작업 체크리스트
+
+MVP 완료 후 Phase 2 진입 전 준비 사항:
+
+- [ ] **Supabase RLS 정책 설계**
+  - 사용자별 데이터 격리 정책
+  - 공유 여행 권한 관리
+
+- [ ] **OAuth2 인증 플로우**
+  - Google Sign-In 통합
+  - Apple Sign-In (iOS)
+
+- [ ] **로컬 → 클라우드 마이그레이션 전략**
+  - AsyncStorage → Supabase 동기화 로직
+  - 충돌 해결 전략 (Last Write Wins vs Merge)
+
+- [ ] **예약 이메일 파싱 엔진**
+  - Gmail API 연동
+  - 항공편/숙박 정보 추출 패턴
 
 ---
 

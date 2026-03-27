@@ -10,7 +10,7 @@
 
 | 원칙 | 준수 여부 | 비고 |
 |------|----------|------|
-| Mobile-First (Expo) | ✅ | Expo SDK 51, React Native |
+| Mobile-First (Expo) | ✅ | Expo SDK 54+, React Native |
 | Logic-UI 분리 | ✅ | `packages/core/` 에 모든 엔진 분리 |
 | TypeScript strict | ✅ | tsconfig strict: true |
 | 단방향 데이터 흐름 | ✅ | Zustand store 사용 |
@@ -86,94 +86,92 @@ tripframe/
 
 ## Data Model
 
-### `packages/core/src/types/event.ts`
+### `packages/core/src/types/trip.ts`
+
+**실제 구현 기준** (tripframe/packages/core/src/types/trip.ts)
 
 ```typescript
 export type EventType =
-  | 'FLIGHT'
-  | 'HOTEL'
-  | 'BUS'
-  | 'TRAIN'
-  | 'TAXI'
-  | 'WALK'
-  | 'SUBWAY'
-  | 'FREE';
+  | 'flight'      // 항공편
+  | 'hotel'       // 호텔 체크인/체크아웃
+  | 'transport'   // 이동 수단 (버스, 기차, 택시 등 통합)
+  | 'home'        // 집 출발 시점 (역산 엔진 결과)
+  | 'activity'    // 식사, 관광 등 활동
+  | 'prep'        // 역산 단계 중 준비 시간 (ReverseCalcStep에서 사용)
+  | 'warning'     // (Phase 2 예약 - 미사용)
+  | 'free';       // (Phase 2 예약 - 미사용)
 
 export type EventStatus =
-  | 'CONFIRMED'   // 예약 완료
-  | 'PENDING'     // 예약 미완료
-  | 'MISSING'     // 공백 감지됨
-  | 'AUTO'        // 앱이 자동 삽입
-  | 'DERIVED';    // 역산으로 계산됨
-
-export interface Location {
-  name: string;
-  address?: string;
-  lat?: number;
-  lng?: number;
-  timezone: string;             // IANA timezone e.g. "Asia/Tokyo"
-}
+  | 'ok'          // 확정된 이벤트
+  | 'missing'     // 누락된 이벤트 (이동 수단 등)
+  | 'warn'        // (Phase 2 예약 - 미사용)
+  | 'auto'        // (Phase 2 예약 - 미사용)
+  | 'free'        // (Phase 2 예약 - 미사용)
+  | 'todo';       // (Phase 2 예약 - 미사용)
 
 export interface TripEvent {
   id: string;
-  type: EventType;
   title: string;
-  subtitle?: string;
-  startTime: string;            // ISO 8601 local time
-  endTime?: string;
-  location: Location;
+  sub?: string;                 // 부제목
+  time: string;                 // "HH:mm" 형식
+  type: EventType;
   status: EventStatus;
-  reservationId?: string;
-  bufferMinutes: number;        // 필요 여유 시간
-  notes?: string;
-  alertMessage?: string;        // 미예약 등 경고 메시지
-  openAlertDate?: string;       // 예약 오픈 알림 날짜 (ISO 8601)
+  location?: string;            // 위치명 (간단 문자열)
+  isDerived?: boolean;          // 역산에 의해 생성된 이벤트 여부
+  metadata?: Record<string, any>; // 추가 정보
 }
 ```
 
-### `packages/core/src/types/gap.ts`
+**주요 차이점 (docs vs 실제 코드)**:
+- ✅ 소문자 케이스 사용 (일치)
+- ✅ `'transport'`로 BUS/TRAIN 통합 (일치)
+- ➕ `'home'`, `'prep'` 타입 추가 (역산 엔진용)
+- ➕ `isDerived` 필드 사용 (status='derived' 대신)
+- ➕ `location?: string` (Location 객체 대신 간단한 문자열)
+- ➕ `time: string` (startTime 대신)
+- ➕ `sub?: string` (subtitle 대신)
+
+### Gap 및 ReverseCalc 타입
 
 ```typescript
 export type GapSeverity = 'DANGER' | 'WARNING' | 'OK';
-
-export interface TransportOption {
-  name: string;
-  durationMinutes: number;
-  costPerPerson: number;        // JPY 또는 KRW
-  currency: 'JPY' | 'KRW';
-  notes: string;
-  isRecommended: boolean;
-  bookingUrl?: string;
-  requiresReservation: boolean;
-}
 
 export interface Gap {
   id: string;
   fromEventId: string;
   toEventId: string;
-  gapMinutes: number;
   severity: GapSeverity;
+  type: 'transport' | 'time_buffer' | 'unknown';
   message: string;
-  detail: string;
-  suggestedOptions: TransportOption[];
-  openAlertDate?: string;
+  suggestions?: string[];      // 해결 옵션 간단 문자열 배열
 }
-```
 
-### `packages/core/src/types/reverse-calc.ts`
-
-```typescript
 export interface ReverseCalcStep {
-  label: string;
-  time: string;               // "HH:MM" or "−N분"
-  type: 'ANCHOR' | 'RULE' | 'CALC' | 'DERIVED' | 'RESULT';
-  note: string;
+  id: string;
+  label: string;              // 단계 설명
+  durationMinutes: number;    // 소요 시간 (분)
+  type: 'buffer' | 'transport' | 'prep' | 'checkin';
 }
 
 export interface ReverseCalcResult {
-  homeDepart: string;         // "HH:MM"
+  anchorTime: string;         // 기준 시간 ("HH:mm")
   steps: ReverseCalcStep[];
-  transportMode: 'BUS' | 'RAIL';
+  calculatedTime: string;     // 계산된 출발 시간 ("HH:mm")
+}
+
+export interface DayTimeline {
+  day: number;
+  date: string;
+  events: TripEvent[];
+  gaps: Gap[];
+}
+
+export interface Trip {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  timelines: DayTimeline[];
 }
 ```
 
@@ -230,6 +228,173 @@ Bottom Tab Navigator
 │   └── 선택 구간별 OptionCard 비교
 └── 역산 (ReverseCalcScreen)
     └── Anchor → 단계별 계산 → 결과
+```
+
+---
+
+## Architecture Constraints
+
+### 의존성 제약 규칙 (TF-SAD-001 § 3.3)
+
+```
+packages/core (❌ 외부 의존 금지)
+  ├─ apps/mobile/store (import type만)
+  │   └─ apps/mobile/hooks (엔진 호출 가능)
+  │       └─ apps/mobile/components (Props 경유만)
+  │           └─ apps/mobile/screens (조합)
+```
+
+**강제 규칙:**
+- `packages/core`: 외부 라이브러리 의존 불가 (순수 TypeScript만)
+- `apps/mobile/store`: core에서 `import type`만 허용 (함수 호출 금지)
+- `apps/mobile/hooks`: store 구독 + core 엔진 호출 가능
+- `apps/mobile/components`: core/store 직접 import 금지, Hook 경유만
+- `apps/mobile/screens`: components + hooks 조합
+
+**검증 방법:**
+```bash
+# components에서 core 직접 import 검증 (0건이어야 함)
+grep -r "import.*@tripframe/core" apps/mobile/src/components/
+```
+
+### Metro 설정 (Windows pnpm 호환)
+
+pnpm 심볼릭 링크가 Windows에서 제대로 작동하지 않을 수 있으므로, Metro에 명시적 경로 매핑을 추가합니다.
+
+**`apps/mobile/metro.config.js`:**
+
+```javascript
+const { getDefaultConfig } = require('@expo/metro-config');
+const path = require('path');
+
+const config = getDefaultConfig(__dirname);
+
+config.resolver.extraNodeModules = {
+  '@tripframe/core': path.resolve(__dirname, '../../packages/core'),
+};
+
+config.watchFolders = [
+  path.resolve(__dirname, '../../packages/core'),
+];
+
+module.exports = config;
+```
+
+---
+
+## Component Props Interfaces
+
+### TimelineItem Props
+
+```typescript
+interface TimelineItemProps {
+  event: TripEvent;
+  isLast?: boolean;
+}
+```
+
+### GapCard Props
+
+```typescript
+interface GapCardProps {
+  gap: Gap;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+```
+
+### OptionCard Props
+
+```typescript
+interface OptionCardProps {
+  option: TransportOption;
+  people: number;           // 인원수 (비용 계산용)
+}
+```
+
+### Badge Props
+
+```typescript
+interface BadgeProps {
+  variant: 'derived' | 'auto' | 'missing' | 'pending' | 'ok';
+  size?: 'small' | 'medium';
+  children: React.ReactNode;
+}
+```
+
+### SectionHeader Props
+
+```typescript
+interface SectionHeaderProps {
+  title: string;
+  badgeCount?: number;
+  subtitle?: string;
+}
+```
+
+### FreeTimeBlock Props
+
+```typescript
+interface FreeTimeBlockProps {
+  startTime: string;        // "HH:MM"
+  endTime: string;          // "HH:MM"
+  suggestions?: string[];   // Phase 4
+}
+```
+
+---
+
+## Design Tokens
+
+### Colors (다크 테마)
+
+TF-SDD-001 § 7.1 참조:
+
+```typescript
+// apps/mobile/src/theme/colors.ts
+export const colors = {
+  background: '#0D0D12',
+  surface: '#13131A',
+  surfaceHover: '#1E1E2E',
+  purple: '#A78BFA',
+  purpleDim: '#7C3AED',
+  danger: '#EF4444',
+  warning: '#F59E0B',
+  success: '#10B981',
+  textPrimary: '#F1F5F9',
+  textSecondary: '#94A3B8',
+  textTertiary: '#64748B',
+  border: '#1E293B',
+} as const;
+```
+
+### Typography
+
+```typescript
+// apps/mobile/src/theme/typography.ts
+export const typography = {
+  screenTitle: { fontSize: 20, fontWeight: '700' },
+  sectionHeader: { fontSize: 16, fontWeight: '600' },
+  cardTitle: { fontSize: 14, fontWeight: '500' },
+  cardBody: { fontSize: 13, fontWeight: '400' },
+  badge: { fontSize: 11, fontWeight: '600' },
+  timeLabel: { fontSize: 12, fontWeight: '500' },
+  resultEmphasis: { fontSize: 24, fontWeight: '700' },
+} as const;
+```
+
+### Spacing
+
+```typescript
+// apps/mobile/src/theme/spacing.ts
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
+} as const;
 ```
 
 ---

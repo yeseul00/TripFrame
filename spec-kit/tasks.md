@@ -79,10 +79,30 @@ packages:
 
 ```bash
 cd apps
+# Expo SDK 54+ 사용 (Constitution Article IV)
 npx create-expo-app mobile --template blank-typescript
 cd mobile
 pnpm add zustand @react-navigation/native @react-navigation/bottom-tabs
 pnpm add react-native-safe-area-context react-native-screens
+```
+
+**Metro 설정** (Windows pnpm 호환):
+```javascript
+// apps/mobile/metro.config.js
+const { getDefaultConfig } = require('@expo/metro-config');
+const path = require('path');
+
+const config = getDefaultConfig(__dirname);
+
+config.resolver.extraNodeModules = {
+  '@tripframe/core': path.resolve(__dirname, '../../packages/core'),
+};
+
+config.watchFolders = [
+  path.resolve(__dirname, '../../packages/core'),
+];
+
+module.exports = config;
 ```
 
 **완료 기준**: `npx expo start` 실행 후 시뮬레이터에서 Hello World 확인
@@ -528,6 +548,106 @@ interface OptionCardProps {
 
 ---
 
+### TASK-028: 테스트 환경 설정
+**파일**: `jest.config.js`, `.github/workflows/test.yml`, `packages/core/jest.config.js`
+**의존**: TASK-002
+
+**Jest 설정 (Coverage 임계값 80%)**:
+```javascript
+// packages/core/jest.config.js
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+};
+```
+
+**Playwright E2E 설정**:
+```bash
+pnpm add -D @playwright/test
+```
+
+**완료 기준**: `pnpm test -- --coverage` 실행 시 coverage 80% 이상
+
+---
+
+### TASK-029: 알려진 한계 개선
+**파일**: `packages/core/src/engine/gap-detector.ts`, `packages/core/src/engine/free-time.ts`
+**의존**: TASK-008, TASK-007
+
+#### 29-A: TC-010 마지막 구간 감지 개선
+**현황**: transport 이벤트 이후 숙소까지 구간을 감지하지 못함
+
+**개선**:
+```typescript
+// gap-detector.ts
+// transport 이벤트 하차 후 목적지까지 이동수단 확인 로직 추가
+if (event.type === 'transport' && nextEvent.type === 'hotel') {
+  // 하차 위치 → 숙소 이동수단 검사
+}
+```
+
+#### 29-B: TC-016, TC-017 자유시간 계산 구현
+**현황**: `calculateFreeTime()` 함수 미구현
+
+**구현**:
+```typescript
+// packages/core/src/engine/free-time.ts (NEW)
+export interface FreeTimeResult {
+  minutes: number;
+  startTime: string;
+  endTime: string;
+  warning?: string;  // 30분 미만 시 경고
+}
+
+export function calculateFreeTime(
+  arrivalTime: string,
+  checkInTime: string
+): FreeTimeResult {
+  // 도착 시간 ~ 체크인 시간 계산
+  // 30분 미만 시 경고 메시지 생성
+}
+```
+
+**완료 기준**:
+- TC-010 테스트 통과
+- TC-016, TC-017 테스트 통과
+
+---
+
+### TASK-030: E2E 테스트 안정화 (testID 추가)
+**파일**: `apps/mobile/src/components/**/*.tsx`, `e2e/*.spec.ts`
+**의존**: TASK-017~024
+
+**testID 추가**:
+```typescript
+// TimelineItem.tsx
+<Text testID={`timeline-item-${event.id}`}>{event.title}</Text>
+
+// GapCard.tsx
+<View testID={`gap-card-${gap.id}`}>
+
+// ReverseCalcScreen.tsx
+<Text testID="reverse-calc-result">{result.homeDepart}</Text>
+```
+
+**E2E 테스트 업데이트**:
+```typescript
+// e2e/timeline.spec.ts
+await expect(page.getByTestId('reverse-calc-result')).toHaveText('09:15');
+```
+
+**완료 기준**: getByText() 0건, getByTestId() 전환 완료
+
+---
+
 ## 태스크 의존성 요약
 
 ```
@@ -559,6 +679,10 @@ TASK-014 + TASK-021 + TASK-009 → TASK-024 [P]
 TASK-019 + TASK-022 + TASK-023 + TASK-024 → TASK-025
 TASK-025 + TASK-010 → TASK-026
 TASK-026 → TASK-027
+
+TASK-002 → TASK-028 [P]
+TASK-008 + TASK-007 → TASK-029 [P]
+TASK-017~024 → TASK-030 [P]
 ```
 
 ---
@@ -572,7 +696,8 @@ TASK-026 → TASK-027
 | Phase 2 (Store/Hooks) | TASK-011~014 | 1일 |
 | Phase 3 (화면) | TASK-015~024 | 3일 |
 | Phase 4 (통합) | TASK-025~027 | 0.5일 |
-| **합계** | 27 태스크 | **7일** |
+| Phase 5 (개선) | TASK-028~030 | 1일 |
+| **합계** | 30 태스크 | **8일** |
 
 ---
 

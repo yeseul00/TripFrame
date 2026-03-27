@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# spec-kit for Claude Code
+# Quick wrapper script for spec-kit commands
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_SCRIPT="$SCRIPT_DIR/.specify/scripts/speckit-claude.py"
+
+python "$PYTHON_SCRIPT" "$@"

@@ -13,14 +13,13 @@
 
 import { test, expect, devices } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:8081';
 const MOBILE = devices['Pixel 5'];
 
 test.use({ ...MOBILE });
 
 test.describe('SCR-001 일정 탭', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(BASE_URL);
+    await page.goto('/');
     // 일정 탭이 기본 활성 탭
     await page.waitForLoadState('networkidle');
   });

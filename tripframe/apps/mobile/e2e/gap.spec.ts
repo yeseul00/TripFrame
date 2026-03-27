@@ -13,14 +13,13 @@
 
 import { test, expect, devices } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:8081';
 const MOBILE = devices['Pixel 5'];
 
 test.use({ ...MOBILE });
 
 test.describe('SCR-002 공백감지 탭', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(BASE_URL);
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     // 공백감지 탭으로 이동
     await page.getByRole('button', { name: '공백감지' }).click();

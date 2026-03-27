@@ -13,14 +13,13 @@
 
 import { test, expect, devices } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:8081';
 const MOBILE = devices['Pixel 5'];
 
 test.use({ ...MOBILE });
 
 test.describe('SCR-004 역산 탭', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(BASE_URL);
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.getByRole('button', { name: '역산' }).click();
   });

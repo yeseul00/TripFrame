@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './apps/mobile/e2e',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -12,7 +12,7 @@ export default defineConfig({
     ['list']
   ],
   use: {
-    baseURL: 'http://localhost:8081',
+    baseURL: process.env.BASE_URL || 'http://localhost:8081',
     trace: 'on-first-retry',
     screenshot: 'on',
     video: 'retain-on-failure',
@@ -24,7 +24,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'cd apps/mobile && npx expo start --web --port 8081',
+    command: 'cd apps/mobile && npx expo start --web --host lan --port 8081',
     url: 'http://localhost:8081',
     reuseExistingServer: true,
     timeout: 120000,

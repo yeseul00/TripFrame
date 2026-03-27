@@ -185,6 +185,7 @@
   },
   "active": "2d3af2e4f94606c1",
   "lastOpenFiles": [
+    "E2E_TEST_GUIDE.md",
     "report/260327/test-results/tripframe-mvp-TripFrame-MVP-E2E-Tests-TC-010-전체-화면-캡처-최종-상태--chromium/test-finished-1.png",
     "report/260327/test-results/tripframe-mvp-TripFrame-MVP-E2E-Tests-TC-009-경고-메시지-스타일-확인-chromium/test-finished-1.png",
     "report/260327/test-results/tripframe-mvp-TripFrame-MVP-E2E-Tests-TC-008-퍼플-강조색-확인-chromium/test-finished-1.png",
@@ -199,7 +200,6 @@
     "report/260327/test-results/tripframe-mvp-TripFrame-MV-48f6d-01-앱이-정상적으로-로드되고-다크-테마가-적용됨-chromium/error-context.md",
     "report/260327/test-results/tripframe-mvp-TripFrame-MV-3d470-s-TC-003-Day-2-타임라인-및-경고-확인-chromium/test-finished-1.png",
     "report/260327/test-results/tripframe-mvp-TripFrame-MV-03775-ts-TC-002-Day-1-타임라인-이벤트-확인-chromium/test-finished-1.png",
-    "report/260327/test-results/screenshots/10-final-state.png",
     "report/260327/playwright-report/data/8ba56edd99aed06373358e132344bd61492d7660.md",
     "report/260327/playwright-report/data/a41a65ca46341caa997980a23ac143c1e1ece856.webm",
     "report/260327/playwright-report/data/3cbcf0eaae4efacf0e964f429fb308ae06a8e406.webm",

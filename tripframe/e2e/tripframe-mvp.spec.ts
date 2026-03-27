@@ -14,10 +14,10 @@ test.describe('TripFrame MVP E2E Tests', () => {
     await expect(page.locator('text=2026.06.18 – 2026.06.20')).toBeVisible();
 
     // 탭 바 확인
-    await expect(page.locator('text=일정')).toBeVisible();
-    await expect(page.locator('text=공백감지')).toBeVisible();
-    await expect(page.locator('text=제안카드')).toBeVisible();
-    await expect(page.locator('text=역산')).toBeVisible();
+    await expect(page.locator('text=일정').first()).toBeVisible();
+    await expect(page.locator('text=공백감지').first()).toBeVisible();
+    await expect(page.locator('text=제안카드').first()).toBeVisible();
+    await expect(page.locator('text=역산').first()).toBeVisible();
 
     // 스크린샷 캡처
     await page.screenshot({ path: 'test-results/screenshots/01-app-loaded.png', fullPage: true });
@@ -80,7 +80,7 @@ test.describe('TripFrame MVP E2E Tests', () => {
 
   test('TC-006: 역산 탭 동작 확인', async ({ page }) => {
     // 역산 탭 클릭
-    await page.locator('text=역산').click();
+    await page.locator('text=역산').first().click();
     await page.waitForTimeout(500);
 
     // 역산 화면이 표시되는지 확인

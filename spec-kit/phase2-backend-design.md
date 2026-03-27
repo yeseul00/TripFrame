@@ -40,17 +40,21 @@
 
 ### 프로젝트 구성
 
+**Phase 2 초기 (권장)**:
 ```
-Supabase Projects:
-├── tripframe-dev      (개발 환경)
-├── tripframe-staging  (스테이징)
-└── tripframe-prod     (프로덕션)
+├── Local (Supabase CLI + Docker)  → 개발, E2E 테스트
+└── Production (Supabase Cloud)    → 실서비스
 ```
 
 **환경별 역할**:
-- **dev**: 로컬 개발, 빠른 스키마 변경
-- **staging**: QA, E2E 테스트
-- **prod**: 실제 사용자 데이터
+- **Local**: 스키마 변경, 기능 개발, E2E 테스트 (무료)
+- **Production**: 실제 사용자 서비스 (Supabase Pro $25/월)
+
+**비용 절감**: Staging 환경 제외로 $50/월 절약 ($600/년)
+
+**확장 전략** (Phase 3+ 또는 사용자 1,000명 이상 시 고려):
+- Staging 환경 추가 (QA 전용)
+- 또는 Supabase Branching (베타) 활용 → Git-style preview deployments
 
 ---
 

@@ -1,124 +1,120 @@
-# Task Breakdown: TripFrame Phase 3
+# Task Breakdown: TripFrame Phase 4
 
-**Feature**: `003-tripframe-phase3`
-**Tasks version**: 1.1
-**Created**: 2026-03-28
-**Depends On**: Phase 2 완료 (TASK-031~056)
-**Total Estimate**: ~48h (~6 working days)
-
----
-
-## Phase 3.1 — 데이터 모델 확장
-
-### TASK-057: Trip/Event Store 확장 · 3h
-- [x] `useTripStore`에 `trips: Trip[]`, `currentTripId` 추가
-- [x] `addTrip`, `updateTrip`, `deleteTrip`, `selectTrip` 액션 구현
-- [x] `addEvent`, `updateEvent`, `deleteEvent` 액션 구현
-- [x] AsyncStorage persist 설정 (`zustand/middleware` persist)
-- [x] Mock 데이터를 초기 여행으로 자동 삽입 (앱 첫 실행 시)
-
-### TASK-058: App.tsx 홈/탭 분기 · 1h · (057)
-- [x] `currentTripId === null`이면 HomeScreen 렌더
-- [x] `currentTripId`가 있으면 기존 TabNavigator 렌더
-- [x] 뒤로가기 제스처 → 홈으로 복귀
+**Feature**: `004-tripframe-phase4`
+**Tasks version**: 1.0
+**Created**: 2026-03-29
+**Depends On**: Phase 3 완료 (TASK-057~069)
+**Total Estimate**: ~36h (~4.5 working days)
 
 ---
 
-## Phase 3.2 — 홈 화면 + Trip CRUD
+## Phase 4.1 — 설정 기능 실구현
 
-### TASK-059: HomeScreen 구현 · 4h · (057, 058)
-- [x] `src/screens/HomeScreen.tsx` 생성
-- [x] 여행 목록 표시: 출발일 역순 정렬
-- [x] `TripCard` 컴포넌트: 여행명, 목적지, 기간, Gap 수 표시
-- [x] "새 여행 만들기" 카드 최상단 고정
-- [x] 여행 카드 탭 → `selectTrip()` 호출 → 탭 화면 진입
+### TASK-072: useSettingsStore 생성 + SettingsScreen 연동 · 2h
+- [ ] `src/store/useSettingsStore.ts` 생성
+- [ ] `Settings` 타입 정의: `luggageSize`, `transportPreference`, `bufferLevel`
+- [ ] AsyncStorage persist 설정 (useTripStore 동일 패턴)
+- [ ] 기본값: `{ luggageSize: 'carry-on', transportPreference: 'any', bufferLevel: 'normal' }`
+- [ ] `SettingsScreen.tsx` 라디오 버튼 → `useSettingsStore` 연결 (탭 시 즉시 저장)
+- [ ] 앱 재시작 후 설정값 복원 확인
 
-### TASK-060: TripFormModal 구현 · 3h · (057)
-- [x] `src/screens/TripFormModal.tsx` 생성
-- [x] 필드: 여행명(필수), 목적지, 출발일, 귀국일
-- [x] 신규 생성 + 기존 수정 모드 (prop으로 trip 전달 시 수정 모드)
-- [x] 저장 → `addTrip` / `updateTrip` 호출
-- [x] 여행 삭제 버튼 (수정 모드) + 확인 모달
+### TASK-073: 역산 로직 bufferLevel 연동 · 3h · (072)
+- [ ] `packages/core/logic/applySettings.ts` 생성 — `applyBufferLevel(steps, bufferLevel)` 순수 함수
+- [ ] `bufferLevel: 'tight'` → 모든 bufferTime × 0.8
+- [ ] `bufferLevel: 'normal'` → 기본값 유지
+- [ ] `bufferLevel: 'relaxed'` → 모든 bufferTime × 1.2
+- [ ] `ReverseCalcDetailScreen.tsx` — `useSettingsStore` 구독, `applyBufferLevel` 적용
+- [ ] 단위 테스트 3개 (tight/normal/relaxed)
 
----
-
-## Phase 3.3 — Event CRUD
-
-### TASK-061: EventFormModal 구현 · 4h · (057)
-- [x] `src/screens/EventFormModal.tsx` 생성
-- [x] 필드: 날짜, 시간(HH:MM), 이벤트명, 장소, 이벤트 유형(EventType)
-- [x] 신규 추가 + 기존 수정 모드
-- [x] 저장 → `addEvent` / `updateEvent` 호출
-- [x] Gap 재계산 트리거 (store 변경 → detectGaps 자동 적용)
-
-### TASK-062: 타임라인에 이벤트 추가/수정 진입점 · 2h · (061)
-- [x] 각 이벤트 카드에 편집 버튼 추가
-- [x] Day 탭 하단 "+ 이벤트 추가" 버튼
-- [x] EventFormModal 열기/닫기 연동
+### TASK-074: 제안 로직 교통 선호도 연동 · 2h · (072)
+- [ ] `packages/core/logic/sortOptions.ts` 생성 — `sortByPreference(options, preference)` 순수 함수
+- [ ] `preference: 'transit'` → 대중교통 타입 옵션 최상단 + "추천" 배지
+- [ ] `preference: 'taxi'` → 택시 타입 옵션 최상단 + "추천" 배지
+- [ ] `preference: 'any'` → 기존 비용 기준 정렬 유지
+- [ ] `SuggestionScreen.tsx` — `useSettingsStore` 구독, `sortByPreference` 적용
+- [ ] 단위 테스트 3개
 
 ---
 
-## Phase 3.4 — 제안카드 토글 인터랙션
+## Phase 4.2 — Google OAuth + 클라우드 동기화 복구
 
-### TASK-063: SuggestionScreen 토글 개선 · 2h
-- [x] `expandedGapId: string | null` state 추가 (Set으로 다중 토글 지원)
-- [x] Gap 헤더 탭 → 해당 Gap 토글, 나머지 유지
-- [x] 기본 상태: 첫 번째 Gap만 펼침 (DANGER Gap 우선)
-- [x] 애니메이션: LayoutAnimation 트랜지션
+### TASK-075: Supabase Redirect URLs 등록 · 1h
+- [ ] Supabase 대시보드 → Authentication → URL Configuration → Redirect URLs 등록
+  - `http://localhost:8081`
+  - `http://localhost:8082`
+  - 배포 URL (있는 경우)
+- [ ] 로컬 환경에서 Google 로그인 오류 없이 완료 확인
+- [ ] `SettingsScreen.tsx` 로그인 후 이메일 표시 확인
 
----
-
-## Phase 3.5 — 역산 탭 개선
-
-### TASK-064: 역산 탭 Day 선택 UI · 2h
-- [x] `ReverseCalcScreen`에 Day 선택 탭 추가 (타임라인 탭과 동일 디자인)
-- [x] `selectedDayIndex` 로컬 state
-- [x] Day 선택 시 해당 Day의 앵커 이벤트(첫 항공편/첫 호텔)로 역산 결과 갱신
-
-### TASK-065: 역산 탭 자유 시간 표시 · 2h · (064)
-- [x] `calculateFreeTime(arrivalTime, checkInTime)` 호출 (packages/core 기존 함수)
-- [x] FreeTime 결과 카드: 자유 시간 길이 + suggestions 목록
-- [x] 자유 시간이 없는 경우(예: 직접 이동) 카드 미표시
-
-### TASK-066: 역산 탭 대안 교통수단 비교 · 3h · (064)
-- [x] `packages/core`에 `recalculateWithAlternative(steps, alternativeStep)` 순수 함수 추가
-- [x] 역산 결과 하단 "다른 교통수단으로 계산" 토글 섹션
-- [x] 대안 선택 시 변경된 출발 시각 + Δ시간 표시
-- [x] 단위 테스트 3개 (빠름/느림/동일)
+### TASK-076: 클라우드 동기화 검증 + 온라인 인디케이터 · 2h · (075)
+- [ ] 로그인 후 로컬 trips → Supabase 자동 sync 동작 확인
+- [ ] `SettingsScreen.tsx` sync 상태 텍스트: "동기화 완료" / "오프라인 모드"
+- [ ] 로그아웃 시 로컬 데이터 유지 확인
+- [ ] 재로그인 시 Supabase 데이터 pull 확인
 
 ---
 
-## Phase 3.6 — 페르소나 테스트 & 결과서
+## Phase 4.3 — 공백감지 FreeTime UI
 
-### TASK-067: E2E 테스트 업데이트 · 3h · (059~066)
-- [x] `e2e/home.spec.ts` — 홈 화면 여행 목록 + 진입 시나리오
-- [x] `e2e/tripCrud.spec.ts` — 여행 생성/수정/삭제
-- [x] 기존 spec 파일 업데이트 (홈 진입 흐름 반영)
-- [x] 전체 E2E 통과 확인 (86/86 PASS)
-
-### TASK-068: Phase 3 페르소나 테스트 결과서 · 2h · (067)
-- [x] 페르소나 시나리오 3종 수동 검증 (홈 진입 → 여행 선택 → 공백 확인 → 이벤트 추가)
-- [x] `report/260328/phase3/E2E_TEST_REPORT.md` 생성
-- [x] `report/260328/phase3/PERSONA_TEST_REPORT.md` 생성
+### TASK-077: GapAnalysisScreen 여유 시간 카드 추가 · 2h
+- [ ] `GapAnalysisScreen.tsx` 하단에 "여유 시간" 섹션 추가
+- [ ] 현재 여행의 도착 이벤트 + 호텔 체크인 이벤트 감지
+- [ ] `calculateFreeTime(arrivalTime, checkInTime)` 호출
+- [ ] FreeTimeResult 카드: 여유 시간(분), suggestions 목록 표시
+- [ ] 30분 미만 → 주황색 경고 (`text-amber-400`)
+- [ ] 여유 시간이 없는 경우 섹션 미표시
 
 ---
 
-## Phase 3.7 — 사용자 테스트 & 피드백
+## Phase 4.4 — UX 개선
 
-### TASK-069: 사용자 테스트 준비 · 1h · (068)
-- [x] 테스트 시나리오 스크립트 작성 (5개 태스크: 여행 생성, 이벤트 추가, 공백 확인, 제안 확인, 역산)
-- [x] 관찰 체크리스트 작성 (혼란 포인트, 완료 여부, 소요 시간)
-- [x] 테스트 빌드 배포 방법 문서화 (Expo Go QR 또는 웹 URL)
+### TASK-078: "공백감지" 메뉴명 최종 결정 + 일괄 변경 · 1h
+- [ ] 메뉴명 최종 결정: 후보 "일정 체크" / "연결 확인" / "이동 체크" 중 1개 선택
+- [ ] 앱 내 "공백감지" 전체 텍스트 일괄 변경 (탭바, 공통 헤더, GapAnalysisScreen)
+- [ ] E2E 테스트에서 `text=공백감지` → 새 이름으로 업데이트
 
-### TASK-070: 사용자 테스트 실시 · 3h · (069)
-- [ ] 테스터 최소 1명 이상 진행 (지인 또는 동료)
-- [ ] 화면 녹화 또는 관찰 메모 수집
-- [ ] 태스크별 완료율 / 혼란 포인트 기록
+### TASK-079: TripFormModal 날짜 Picker · 3h
+- [ ] `@react-native-community/datetimepicker` 설치
+- [ ] `TripFormModal.tsx` 날짜 필드 → DatePicker 컴포넌트
+- [ ] iOS/Android: 네이티브 DateTimePicker
+- [ ] Web: `<TextInput>` + `inputMode="numeric"` fallback (또는 `type="date"`)
+- [ ] 귀국일 < 출발일 인라인 오류 메시지 추가
 
-### TASK-071: 피드백 분석 & 결과서 작성 · 2h · (070)
-- [ ] 피드백 항목 분류 (버그 / UX개선 / 신기능 요청)
-- [ ] `report/260328/phase3/USER_FEEDBACK_REPORT.md` 작성
-- [ ] Phase 4 백로그에 반영할 항목 정리
+---
+
+## Phase 4.5 — 교통 데이터 내장 DB 기초
+
+### TASK-080: 공항버스 노선 내장 DB · 3h · (IDEA-007)
+- [ ] `packages/core/data/transport-rules.ts` — `TransportRoute` 타입 정의
+- [ ] 인천국제공항(ICN) ↔ 서울 주요 구간 10개 이상 노선 데이터
+  - ICN ↔ 강남, 홍대, 서울역, 잠실, 신촌, 수원, 인천시내 등
+  - 소요시간, 배차간격, 첫차/막차
+- [ ] `getTransportRoute(from, to)` 조회 함수
+- [ ] fallback: 노선 없으면 기존 하드코딩값 + `isEstimate: true`
+- [ ] 역산 로직에서 하드코딩된 75분/50분 → DB 조회로 교체
+
+### TASK-081: KTX/SRT 주요 노선 스냅샷 · 2h · (IDEA-003)
+- [ ] KTX 주요 10개 노선 데이터 (서울-부산, 서울-광주, 서울-대전, 서울-동대구 등)
+- [ ] SRT 주요 5개 노선 데이터 (수서-부산, 수서-광주송정 등)
+- [ ] `transport-rules.ts`에 추가
+- [ ] `isEstimate: false` (실제 시각표 기준)
+- [ ] 소요시간 + 배차간격만 저장 (잔여석/예매는 Phase 5)
+
+---
+
+## Phase 4.6 — 테스트 & 결과서
+
+### TASK-082: E2E 테스트 업데이트 · 3h · (072~081)
+- [ ] `settings.spec.ts` — 설정 저장/복원, 역산 결과 변동 검증 (3개 케이스)
+- [ ] `gap.spec.ts` — FreeTime 카드 표시 검증 추가
+- [ ] `suggestion.spec.ts` — 교통 선호도 정렬 검증 추가
+- [ ] 메뉴명 변경 반영 (TASK-078 완료 후)
+- [ ] 전체 E2E 통과 확인 (목표: 90+ PASS)
+
+### TASK-083: Phase 4 완료보고서 · 1h · (082)
+- [ ] `report/260329/phase4/E2E_TEST_REPORT.md` 생성
+- [ ] `report/260329/phase4/PHASE4_완료보고서.md` 생성
+- [ ] Phase 5 권장 우선순위 정리 (예약 알림, 패스 경제성, AI 도우미)
 
 ---
 
@@ -126,11 +122,10 @@
 
 | Phase | 태스크 | 완료 | 진행률 |
 |-------|--------|------|--------|
-| 3.1 데이터 모델 | 057-058 | 2/2 | 100% |
-| 3.2 홈 + Trip CRUD | 059-060 | 2/2 | 100% |
-| 3.3 Event CRUD | 061-062 | 2/2 | 100% |
-| 3.4 제안카드 토글 | 063 | 1/1 | 100% |
-| 3.5 역산 개선 | 064-066 | 3/3 | 100% |
-| 3.6 페르소나 테스트 | 067-068 | 2/2 | 100% |
-| 3.7 사용자 테스트 | 069-071 | 1/3 | 33% |
-| **합계** | **15** | **13** | **87%** |
+| 4.1 설정 기능 | 072~074 | 0/3 | 0% |
+| 4.2 OAuth + 동기화 | 075~076 | 0/2 | 0% |
+| 4.3 FreeTime UI | 077 | 0/1 | 0% |
+| 4.4 UX 개선 | 078~079 | 0/2 | 0% |
+| 4.5 교통 DB | 080~081 | 0/2 | 0% |
+| 4.6 테스트 & 결과서 | 082~083 | 0/2 | 0% |
+| **합계** | **12** | **0** | **0%** |

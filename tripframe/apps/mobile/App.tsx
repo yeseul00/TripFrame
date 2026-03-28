@@ -7,6 +7,7 @@ import { GapAnalysisScreen } from './src/screens/GapAnalysisScreen';
 import { ReverseCalcDetailScreen } from './src/screens/ReverseCalcDetailScreen';
 import { SuggestionScreen } from './src/screens/SuggestionScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { HomeScreen } from './src/screens/HomeScreen';
 import { supabase } from './src/lib/supabase';
 import { ensureUserProfile } from './src/lib/userProfile';
 import { useRealtimeSync } from './src/hooks/useRealtimeSync';
@@ -21,8 +22,10 @@ export default function App() {
   useRealtimeSync(userId);
   const currentTab = useTripStore((state) => state.currentTab);
   const setCurrentTab = useTripStore((state) => state.setCurrentTab);
+  const currentTripId = useTripStore((state) => state.currentTripId);
+  const selectTrip = useTripStore((state) => state.selectTrip);
+  const currentTrip = useTripStore((state) => state.currentTrip);
 
-  // 로그인 상태 감지 (앱 기능은 비로그인 상태에서도 동작)
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
@@ -38,6 +41,16 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  // 홈 화면: 여행이 선택되지 않은 경우
+  if (!currentTripId) {
+    return (
+      <View className="flex-1 bg-background">
+        <StatusBar style="light" />
+        <HomeScreen onSelectTrip={(id) => selectTrip(id)} />
+      </View>
+    );
+  }
+
   const renderScreen = () => {
     switch (currentTab) {
       case '일정': return <MainTimelineScreen />;
@@ -52,6 +65,21 @@ export default function App() {
   return (
     <View className="flex-1 bg-background">
       <StatusBar style="light" />
+
+      {/* Shared Top Header */}
+      <View className="flex-row items-center justify-between px-4 pt-12 pb-3 border-b border-gray-800">
+        <TouchableOpacity
+          onPress={() => selectTrip(null)}
+          className="px-3 py-1 rounded-full bg-card border border-gray-700 min-w-[60px]"
+        >
+          <Text className="text-muted text-xs text-center">← 홈</Text>
+        </TouchableOpacity>
+        <View className="items-center">
+          <Text className="text-white text-sm font-semibold">{currentTrip()?.title ?? ''}</Text>
+          <Text className="text-muted text-xs">{currentTab}</Text>
+        </View>
+        <View className="min-w-[60px]" />
+      </View>
 
       {/* Active Screen */}
       <View className="flex-1">

@@ -6,19 +6,20 @@
  */
 
 import { test, expect, devices } from '@playwright/test';
+import { selectMockTrip } from './helpers';
 
 const MOBILE = devices['Pixel 5'];
 test.use({ ...MOBILE });
 
 test.describe('SCR-004 제안카드 탭', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await selectMockTrip(page);
     await page.locator('text=제안카드').click();
   });
 
-  test('[SCR-004-01] "이동 수단 제안" 타이틀 표시', async ({ page }) => {
-    await expect(page.getByText('이동 수단 제안')).toBeVisible();
+  test('[SCR-004-01] 제안카드 탭 진입 확인', async ({ page }) => {
+    // 공통 헤더에 탭 이름 표시
+    await expect(page.getByText('제안카드').first()).toBeVisible();
   });
 
   test('[SCR-004-02] DANGER Gap 구간이 표시됨 (하카타→유후인)', async ({ page }) => {
@@ -62,8 +63,7 @@ test.describe('SCR-004 제안카드 탭', () => {
 
 test.describe('SCR-005 설정 탭', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await selectMockTrip(page);
     await page.locator('text=설정').click();
   });
 

@@ -4,14 +4,14 @@
  */
 
 import { test, expect, devices } from '@playwright/test';
+import { selectMockTrip } from './helpers';
 
 const MOBILE = devices['Pixel 5'];
 test.use({ ...MOBILE });
 
 test.describe('P1 — 짐 많은 여행자 (설정 화면 기준)', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await selectMockTrip(page);
     await page.locator('text=설정').click();
   });
 
@@ -33,8 +33,7 @@ test.describe('P1 — 짐 많은 여행자 (설정 화면 기준)', () => {
 
 test.describe('P2 — 알뜰 배낭여행자 (제안카드 화면 검증)', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await selectMockTrip(page);
     await page.locator('text=제안카드').click();
   });
 
@@ -58,22 +57,19 @@ test.describe('P2 — 알뜰 배낭여행자 (제안카드 화면 검증)', () =
 
 test.describe('P3 — 빡빡한 비즈니스 여행자 (역산 + 제안카드)', () => {
   test('[P3-01] 역산 화면에서 출발 시각이 표시됨', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await selectMockTrip(page);
     await page.locator('text=역산').first().click();
     await expect(page.getByText('09:15')).toBeVisible();
   });
 
   test('[P3-02] 제안카드에서 90분 이내 옵션 존재 (택시 90분)', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await selectMockTrip(page);
     await page.locator('text=제안카드').click();
     await expect(page.getByText('90분')).toBeVisible();
   });
 
   test('[P3-03] 공백감지에서 DANGER 경고 2건 표시', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await selectMockTrip(page);
     await page.locator('text=공백감지').click();
     await expect(page.getByText('이동 수단 누락')).toHaveCount(2);
   });
@@ -81,8 +77,7 @@ test.describe('P3 — 빡빡한 비즈니스 여행자 (역산 + 제안카드)',
 
 test.describe('공통 — 인원수 요금 계산 검증', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await selectMockTrip(page);
     await page.locator('text=제안카드').click();
   });
 

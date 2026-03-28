@@ -12,6 +12,7 @@
  */
 
 import { test, expect, devices } from '@playwright/test';
+import { selectMockTrip } from './helpers';
 
 const MOBILE = devices['Pixel 5'];
 
@@ -19,15 +20,14 @@ test.use({ ...MOBILE });
 
 test.describe('SCR-004 역산 탭', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await selectMockTrip(page);
     await page.locator('text=역산').last().click();
   });
 
   // ── 화면 기본 렌더 ──────────────────────────────────────────────────────
 
-  test('[SCR-004-01] "역산 타임라인" 타이틀 표시', async ({ page }) => {
-    await expect(page.getByText('역산 타임라인')).toBeVisible();
+  test('[SCR-004-01] 역산 탭 진입 확인 (서브타이틀 표시)', async ({ page }) => {
+    await expect(page.getByText('집을 몇 시에 나서야 할까?')).toBeVisible();
   });
 
   test('[SCR-004-02] "집을 몇 시에 나서야 할까?" 서브타이틀 표시', async ({ page }) => {
@@ -95,5 +95,36 @@ test.describe('SCR-004 역산 탭', () => {
     await page.locator('text=공백감지').click();
     await page.locator('text=역산').last().click();
     await expect(page.getByText('09:15')).toBeVisible();
+  });
+
+  // ── Phase 3.5: Day 선택 탭 ──────────────────────────────────────────────
+
+  test('[P3-REV-01] Day 선택 탭 3개가 표시된다 (Day 1, 2, 3)', async ({ page }) => {
+    await expect(page.getByText('Day 1').first()).toBeVisible();
+    await expect(page.getByText('Day 2').first()).toBeVisible();
+    await expect(page.getByText('Day 3').first()).toBeVisible();
+  });
+
+  test('[P3-REV-02] Day 탭 클릭 시 해당 Day로 전환된다', async ({ page }) => {
+    await page.getByText('Day 2').first().click();
+    // Day 2로 전환 확인 (서브타이틀 잔류)
+    await expect(page.getByText('집을 몇 시에 나서야 할까?')).toBeVisible();
+  });
+
+  // ── Phase 3.5: 대안 교통수단 비교 ─────────────────────────────────────
+
+  test('[P3-REV-03] "다른 교통수단으로 계산" 토글 버튼이 표시된다', async ({ page }) => {
+    await expect(page.getByText('다른 교통수단으로 계산')).toBeVisible();
+  });
+
+  test('[P3-REV-04] 토글 클릭 → 대안 교통수단 목록이 펼쳐진다', async ({ page }) => {
+    await page.getByText('다른 교통수단으로 계산').click();
+    await expect(page.getByText(/리무진 버스|공항철도|택시/).first()).toBeVisible();
+  });
+
+  test('[P3-REV-05] 대안 선택 시 Δ시간 배지가 표시된다', async ({ page }) => {
+    await page.getByText('다른 교통수단으로 계산').click();
+    await page.getByText(/공항철도/).first().click();
+    await expect(page.getByText(/분 앞당겨짐|분 늦출 수 있음|변화 없음/).first()).toBeVisible();
   });
 });

@@ -41,17 +41,17 @@ function GapCard({ gap }: { gap: Gap }) {
 }
 
 export function GapAnalysisScreen() {
-  const { allGaps, trip } = useTripStore();
+  const { allGaps, currentTrip } = useTripStore();
+  const trip = currentTrip();
   const gaps = allGaps();
   const dangerCount = gaps.filter((g) => g.severity === 'DANGER').length;
 
+  if (!trip) return null;
+
   return (
     <View className="flex-1 bg-background">
-      {/* Header */}
-      <View className="px-4 pt-12 pb-4">
-        <Text className="text-white text-xl font-bold">공백 감지</Text>
-        <Text className="text-gray-500 text-xs mt-1">{trip.title}</Text>
-      </View>
+      {/* Summary header padding */}
+      <View className="px-4 pt-4 pb-1" />
 
       {/* Summary */}
       <View className="mx-4 mb-4 p-4 rounded-xl bg-card">

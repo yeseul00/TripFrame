@@ -61,6 +61,7 @@ export interface DayTimeline {
 export interface Trip {
   id: string;
   title: string;
+  destination?: string;
   startDate: string;
   endDate: string;
   timelines: DayTimeline[];

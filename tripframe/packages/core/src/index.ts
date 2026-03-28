@@ -8,3 +8,4 @@ export * from './sync/conflictResolver';
 export * from './types/transport';
 export * from './data/mockTransport';
 export * from './logic/rankOptions';
+export * from './logic/alternativeCalc';

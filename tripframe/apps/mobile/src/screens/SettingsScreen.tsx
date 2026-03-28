@@ -101,8 +101,7 @@ export function SettingsScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-14 pb-10">
-      <Text className="text-white text-2xl font-bold mb-8">설정</Text>
+    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-4 pb-10">
 
       {/* 계정 섹션 */}
       <View className="mb-8 p-4 rounded-xl bg-card border border-gray-800">

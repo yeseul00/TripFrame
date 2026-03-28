@@ -12,6 +12,7 @@
  */
 
 import { test, expect, devices } from '@playwright/test';
+import { selectMockTrip } from './helpers';
 
 const MOBILE = devices['Pixel 5'];
 
@@ -19,16 +20,15 @@ test.use({ ...MOBILE });
 
 test.describe('SCR-002 공백감지 탭', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    // 공백감지 탭으로 이동
+    await selectMockTrip(page);
     await page.locator('text=공백감지').click();
   });
 
   // ── 화면 기본 렌더 ──────────────────────────────────────────────────────
 
-  test('[SCR-002-01] "공백 감지" 타이틀 표시', async ({ page }) => {
-    await expect(page.getByText('공백 감지')).toBeVisible();
+  test('[SCR-002-01] "공백감지" 탭 표시', async ({ page }) => {
+    // 공통 헤더에 현재 탭 이름(공백감지) 표시
+    await expect(page.getByText('공백감지').first()).toBeVisible();
   });
 
   test('[SCR-002-02] 요약 카드 — 위험 공백 / 총 공백 / 완성 구간 수치 표시', async ({ page }) => {

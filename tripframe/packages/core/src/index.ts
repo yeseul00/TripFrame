@@ -3,3 +3,8 @@ export * from './data/mock';
 export * from './logic/reverseEngine';
 export * from './logic/gapEngine';
 export * from './logic/freeTime';
+export * from './sync/syncEngine';
+export * from './sync/conflictResolver';
+export * from './types/transport';
+export * from './data/mockTransport';
+export * from './logic/rankOptions';

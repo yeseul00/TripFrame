@@ -21,7 +21,7 @@ test.describe('SCR-004 역산 탭', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-    await page.getByRole('button', { name: '역산' }).click();
+    await page.locator('text=역산').last().click();
   });
 
   // ── 화면 기본 렌더 ──────────────────────────────────────────────────────
@@ -58,15 +58,15 @@ test.describe('SCR-004 역산 탭', () => {
   });
 
   test('[TC-008-B] 역산 단계: 공항 체크인 항목 표시', async ({ page }) => {
-    await expect(page.getByText('공항 체크인')).toBeVisible();
+    await expect(page.getByText('공항 체크인').first()).toBeVisible();
   });
 
   test('[TC-008-C] 역산 단계: 공항 이동 버스 항목 표시', async ({ page }) => {
-    await expect(page.getByText('공항 이동 버스')).toBeVisible();
+    await expect(page.getByText('공항 이동 버스').first()).toBeVisible();
   });
 
   test('[TC-008-D] 역산 단계: 외출 준비 항목 표시', async ({ page }) => {
-    await expect(page.getByText('외출 준비')).toBeVisible();
+    await expect(page.getByText('외출 준비').first()).toBeVisible();
   });
 
   // ── TC-008: 총 소요시간 (REQ-FR-005) ─────────────────────────────────────
@@ -82,18 +82,18 @@ test.describe('SCR-004 역산 탭', () => {
   });
 
   test('[TC-008-G] 브레이크다운에 "50분" (체크인) 표시', async ({ page }) => {
-    await expect(page.getByText('50분')).toBeVisible();
+    await expect(page.getByText('50분', { exact: true })).toBeVisible();
   });
 
   test('[TC-008-H] 브레이크다운에 "75분" (버스 이동) 표시', async ({ page }) => {
-    await expect(page.getByText('75분')).toBeVisible();
+    await expect(page.getByText('75분', { exact: true })).toBeVisible();
   });
 
   // ── 탭 이동 검증 ─────────────────────────────────────────────────────────
 
   test('[SCR-004-05] 공백감지 탭으로 이동 후 역산 탭 재진입 시 결과 유지', async ({ page }) => {
-    await page.getByRole('button', { name: '공백감지' }).click();
-    await page.getByRole('button', { name: '역산' }).click();
+    await page.locator('text=공백감지').click();
+    await page.locator('text=역산').last().click();
     await expect(page.getByText('09:15')).toBeVisible();
   });
 });

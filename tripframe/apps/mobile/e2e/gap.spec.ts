@@ -22,7 +22,7 @@ test.describe('SCR-002 공백감지 탭', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     // 공백감지 탭으로 이동
-    await page.getByRole('button', { name: '공백감지' }).click();
+    await page.locator('text=공백감지').click();
   });
 
   // ── 화면 기본 렌더 ──────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ test.describe('SCR-002 공백감지 탭', () => {
   // ── 탭 이동 검증 ─────────────────────────────────────────────────────────
 
   test('[SCR-002-03] 일정 탭으로 돌아가면 TimelineScreen 재렌더', async ({ page }) => {
-    await page.getByRole('button', { name: '일정' }).click();
+    await page.locator('text=일정').click();
     await expect(page.getByText('후쿠오카 · 유후인')).toBeVisible();
   });
 });

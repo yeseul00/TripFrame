@@ -24,6 +24,7 @@ pnpm --filter @tripframe/core typecheck  # Type check only
 
 # Single test file
 cd packages/core && npx jest logic/__tests__/engine.test.ts
+# 전체 테스트 파일: engine.test.ts, reverseEngine.test.ts, gapEngine.test.ts, freeTime.test.ts
 
 # Mobile app (apps/mobile)
 pnpm --filter mobile start               # Start Expo Metro bundler
@@ -43,10 +44,11 @@ TripFrame/                  # repo root (docs, spec-kit, mockup)
 ```
 
 ### Core Package (`packages/core/src/`)
-- **types/trip.ts** — All data models (`TripEvent`, `Gap`, `ReverseCalcResult`, `Trip`)
+- **types/trip.ts** — All data models (`TripEvent`, `Gap`, `ReverseCalcResult`, `Trip`, `DayTimeline`)
 - **logic/reverseEngine.ts** — `calculateReverseTime(anchorTime, steps)`: subtracts each step from anchor time using date-fns
 - **logic/gapEngine.ts** — `detectGaps(events)`: DANGER = no transport between locations, WARNING = buffer <30min
-- **data/mock.ts** — Fukuoka-Yufuin sample trip for dev/test
+- **logic/freeTime.ts** — `calculateFreeTime(arrivalTime, checkInTime)`: computes free time between arrival and hotel check-in; returns `FreeTimeResult` with suggestions (REQ-FR-011~013)
+- **data/mock.ts** — Fukuoka-Yufuin sample trip for dev/test (`MOCK_TRIP`, `MOCK_REVERSE_CALC`)
 
 ### Mobile App (`apps/mobile/`)
 - `App.tsx` — Root with custom bottom tab bar (일정 / 공백감지 / 제안카드 / 역산)
@@ -55,9 +57,11 @@ TripFrame/                  # repo root (docs, spec-kit, mockup)
 - Styling: NativeWind v4 (className), dark theme `#0F0F13` bg + `#A78BFA` purple accent
 
 ### Key Data Types
-- `TripEvent` — Any timeline item (flight, hotel, transport, activity)
+- `TripEvent` — Any timeline item (flight, hotel, transport, activity); `isDerived: true` marks reverse-calc-generated events
+- `DayTimeline` — Bundles `events[]` + `gaps[]` for one day; `Trip.timelines` is an array of these
 - `Gap` — Derived from events: `DANGER` (no transport), `WARNING` (<30min buffer)
 - `ReverseCalcStep` — Single step in reverse calculation (buffer, transport, prep, checkin)
+- `FreeTimeResult` — Output of `calculateFreeTime()`; defined in `logic/freeTime.ts` (not in types/trip.ts)
 
 ## Constitution Rules (`spec-kit/constitution.md`)
 
@@ -82,19 +86,62 @@ These rules are non-negotiable:
 - Types/Interfaces: PascalCase (no `I` prefix)
 
 ## Priority (P1 must complete before P2)
-1. P1: Reverse timeline engine + Gap detection (MVP)
-2. P2: Transport options + Customization
+1. P1: Reverse timeline engine + Gap detection (MVP) — **COMPLETE** (Phase 1 done 2026-03-27)
+2. P2: Transport options + Customization — **IN PLANNING** (see `spec-kit/phase2-overview.md`)
+   - Supabase BaaS (PostgreSQL + RLS + Realtime)
+   - Google/Apple OAuth via Supabase Auth
+   - AsyncStorage for offline-first local persistence
+   - Cloud sync with Last Write Wins conflict resolution
 3. P3: Booking alerts + Pass economics analysis
 4. P4: Activity recommendations
 
 ## E2E Testing
 
+```bash
+# Run Playwright E2E (from tripframe/ directory — auto-starts web server)
+cd tripframe && npx playwright test
+
+# Run specific E2E spec
+cd tripframe && npx playwright test e2e/tripframe-mvp.spec.ts
+```
+
+- **Test locations**: `tripframe/e2e/` (main MVP tests) and `tripframe/apps/mobile/e2e/` (feature-level specs)
 - **Web E2E (AI-driven)**: `pnpm --filter mobile web` → `localhost:8081` → Playwright MCP
 - **Mobile native E2E**: Maestro + Android emulator (Phase 2)
 - Playwright MCP registered in `.mcp.json` at repo root
+- Playwright config auto-starts Expo web server (`localhost:8081`) via `webServer` setting
+
+## spec-kit 워크플로우
+
+새 기능 개발 시 리포 루트의 `./speckit` 스크립트로 문서를 생성하고 구현을 진행합니다.
+
+```bash
+# 기능 명세 → 계획 → 태스크 → 구현 순서
+./speckit speckit.specify "기능 설명"   # spec-kit/spec.md 생성
+./speckit speckit.plan                  # spec-kit/plan.md 생성
+./speckit speckit.tasks                 # spec-kit/tasks.md 생성
+./speckit speckit.implement             # tasks.md 기반 구현 실행
+./speckit speckit.analyze               # spec/plan/tasks 간 일관성 검사
+./speckit list                          # 전체 명령어 목록 확인
+```
+
+Phase 3 문서가 이미 존재하므로 구현 단계부터 바로 시작 가능:
+```bash
+./speckit speckit.implement
+```
+
+**spec-kit 문서 위치** (`spec-kit/`):
+- `constitution.md` — 불변 원칙 (헌법)
+- `e2e-test-workflow.md` — E2E 테스트 워크플로우
+- `spec.md` — **[현재 활성]** Phase 3 기능 명세 (Feature 003)
+- `plan.md` — **[현재 활성]** Phase 3 기술 계획 (홈 화면, CRUD, UX 개선)
+- `tasks.md` — **[현재 활성]** Phase 3 태스크 목록 (TASK-057~068)
+- `phase1/` — Phase 1 아카이브
+- `phase2/` — Phase 2 아카이브 (spec/plan/tasks + 상세 설계 문서)
+- `phase3/` — Phase 3 상세 참고 문서 (추후 추가)
 
 ## Key Reference Files
-- `TripFrame_mockup.jsx` — Source of truth for UI design and color palette
-- `TripFrame_FRS_v0.1.docx` — Functional requirements for calculation and detection engines
-- `spec-kit/constitution.md` — Non-negotiable architecture and code quality rules
-- `spec-kit/tasks.md` — Full task breakdown (TASK-001 ~ TASK-027)
+- `TripFrame_mockup.jsx` — UI 디자인 및 색상 팔레트의 원본 소스
+- `TripFrame_FRS_v0.1.docx` — 계산·감지 엔진의 기능 요구사항 명세
+- `spec-kit/constitution.md` — 절대 원칙 (아키텍처 및 코드 품질 규칙)
+- `spec-kit/tasks.md` — Phase 3 태스크 목록 (TASK-057~068)

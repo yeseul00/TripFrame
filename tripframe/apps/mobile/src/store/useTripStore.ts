@@ -3,7 +3,7 @@ import { Trip, DayTimeline } from '@tripframe/core';
 import { MOCK_TRIP, MOCK_REVERSE_CALC } from '@tripframe/core';
 import type { ReverseCalcResult } from '@tripframe/core';
 
-type TabName = '일정' | '공백감지' | '제안카드' | '역산';
+type TabName = '일정' | '공백감지' | '제안카드' | '역산' | '설정';
 
 interface TripStore {
   currentTab: TabName;

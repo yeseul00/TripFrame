@@ -45,3 +45,6 @@ coverage/
 
 # Obsidian
 .obsidian/
+
+# Sensitive docs (credentials)
+docs/supa.md

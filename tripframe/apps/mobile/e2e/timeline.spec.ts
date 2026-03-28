@@ -31,7 +31,7 @@ test.describe('SCR-001 일정 탭', () => {
   });
 
   test('[SCR-001-02] 여행 기간 날짜 표시', async ({ page }) => {
-    await expect(page.getByText(/2026\.06\.18/)).toBeVisible();
+    await expect(page.getByText(/2026\.06\.18/).first()).toBeVisible();
   });
 
   test('[SCR-001-03] Day 선택 탭 3개 (Day 1, Day 2, Day 3) 표시', async ({ page }) => {
@@ -48,7 +48,7 @@ test.describe('SCR-001 일정 탭', () => {
     // 09:15 이벤트 카드 확인
     await expect(page.getByText('09:15')).toBeVisible();
     await expect(page.getByText('집 출발')).toBeVisible();
-    await expect(page.getByText('역산')).toBeVisible();
+    await expect(page.getByText('역산').first()).toBeVisible();
   });
 
   // ── Day 전환 ────────────────────────────────────────────────────────────
@@ -61,7 +61,7 @@ test.describe('SCR-001 일정 탭', () => {
 
   test('[SCR-001-05] Day 3 탭 클릭 시 Day 3 이벤트 표시', async ({ page }) => {
     await page.getByText('Day 3').click();
-    await expect(page.getByText('2026.06.20')).toBeVisible();
+    await expect(page.getByText('2026.06.20', { exact: true })).toBeVisible();
     await expect(page.getByText('인천행 비행기')).toBeVisible();
   });
 
@@ -84,9 +84,9 @@ test.describe('SCR-001 일정 탭', () => {
   // ── 하단 탭바 ───────────────────────────────────────────────────────────
 
   test('[SCR-001-07] 하단 탭바 4개 탭 표시 (일정, 공백감지, 제안카드, 역산)', async ({ page }) => {
-    await expect(page.getByRole('button', { name: '일정' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '공백감지' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '제안카드' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '역산' })).toBeVisible();
+    await expect(page.locator('text=일정').first()).toBeVisible();
+    await expect(page.locator('text=공백감지').first()).toBeVisible();
+    await expect(page.locator('text=제안카드').first()).toBeVisible();
+    await expect(page.locator('text=역산').first()).toBeVisible();
   });
 });

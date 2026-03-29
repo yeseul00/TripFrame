@@ -36,17 +36,46 @@ TripFrame은 **"여행 일정의 빈 칸을 찾아주는 앱"** 이다.
 
 ## Article IV — 기술 스택 (고정)
 
+> v2.0 — TF-TECH-001 의사결정 브리핑 반영 (2026-03-29)
+
 | 영역 | 기술 | 버전 | 비고 |
 |------|------|------|------|
-| 모바일 | Expo (React Native) | SDK 51+ | 변경 불가 |
-| 웹 확장 | React + Vite | 18+ | Phase 2 |
+| 모바일 | Expo SDK + EAS Build | SDK 54+ | Development Build 필수. Expo Go는 개발 초기에만 허용 |
+| 빌드/배포 | EAS Build / EAS Update / EAS Submit | - | OTA 업데이트 내장. CI/CD 대체 |
+| 웹 확장 | React + Vite | 18+ | Phase 2. @tripframe/core 직접 import |
 | 언어 | TypeScript | 5.x | strict mode 필수 |
 | 상태 관리 | Zustand | 4.x | Redux 사용 금지 |
-| 로컬 저장 | AsyncStorage (모바일) | - | SQLite는 복잡성 증가 시만 |
+| 사용자 데이터 저장 | expo-sqlite/kv-store | - | AsyncStorage API 호환. import 1줄 교체. Phase 4 |
+| 참조 데이터 저장 | expo-sqlite (Full SQL) | - | 교통·공항·항공사·템플릿 DB. Phase 5 |
+| 암호화 (Phase 4) | expo-crypto AES-256-GCM | - | Expo Go/Dev Build 모두 동작. 사용자 데이터 암호화 |
+| 암호화 (Phase 5+) | expo-secure-store (키 보관) | - | Dev Build 전환 후. 마스터 키를 하드웨어 보안 모듈에 이동 |
+| ORM (선택) | Drizzle ORM | - | 참조 DB 타입 안전 쿼리. Phase 5 도입 검토 |
 | 클라우드 | Supabase | - | Phase 2 이후 |
 | 타임라인 시각화 | React Native SVG | - | D3는 웹에서만 |
 | 테스트 | Jest + React Native Testing Library | - | |
+| E2E 테스트 | Playwright (웹) + Maestro (네이티브) | - | Maestro는 Phase 5 Dev Build 이후 |
 | 모노레포 | pnpm workspaces | - | nx는 과잉 |
+
+### 스토리지 레이어 구조
+
+```
+Layer 1 — 사용자 데이터 (KV Store)
+  대상: Trip, Event, Settings, UserPreferences
+  저장소: expo-sqlite/kv-store
+  암호화: expo-crypto AES-256-GCM (Phase 4)
+  키 보관: expo-secure-store (Phase 5, Dev Build 이후)
+
+Layer 2 — 참조 데이터 (Full SQL)
+  대상: TransportRoute, AirportProfile, AirlineRule, CityTemplate
+  저장소: expo-sqlite (SQL 쿼리, 인덱싱)
+  암호화: 불필요 (공개 데이터)
+```
+
+### 프레임워크 전환 금지
+
+Flutter, KMP, .NET MAUI, Ionic으로의 전환을 금지한다.
+근거: `@tripframe/core` TypeScript 자산 보존, B2B API Track 유지, 1인 개발 효율성.
+(TF-TECH-001 의사결정 매트릭스: Expo+EAS 92/100, Flutter 52/100, KMP 38/100)
 
 ---
 
@@ -86,9 +115,12 @@ TripFrame은 **"여행 일정의 빈 칸을 찾아주는 앱"** 이다.
 
 ## Article VIII — 보안 원칙
 
-1. 예약번호, 개인정보는 기기 로컬 저장 시 암호화
-2. 클라우드 동기화(Phase 2) 전 Supabase RLS 정책 검토 필수
-3. 외부 API 키는 환경변수로만 관리 — 코드에 하드코딩 절대 금지
+1. **로컬 데이터 암호화 필수**: 예약번호, 개인정보는 기기 로컬 저장 시 반드시 암호화
+   - Phase 4: expo-crypto AES-256-GCM으로 사용자 데이터 암호화 (개인정보보호법 제29조 준수)
+   - Phase 5+: expo-secure-store로 마스터 키를 하드웨어 보안 모듈에 보관
+2. **평문 AsyncStorage 금지**: 사용자 데이터를 평문 AsyncStorage에 저장하는 코드 작성 금지. 반드시 암호화 래퍼를 통해 접근
+3. 클라우드 동기화(Phase 2) 전 Supabase RLS 정책 검토 필수
+4. 외부 API 키는 환경변수로만 관리 — 코드에 하드코딩 절대 금지
 
 ---
 
@@ -107,4 +139,4 @@ P1 완성 전 P2 작업 시작 금지.
 
 ---
 
-*constitution version: 1.0 | 2026-03-24*
+*constitution version: 2.0 | 2026-03-29 | Article IV 기술 스택 전면 개정 (TF-TECH-001), Article VIII 보안 원칙 강화*

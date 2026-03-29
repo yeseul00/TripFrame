@@ -1,276 +1,227 @@
-# Implementation Plan: TripFrame Phase 4
+# Implementation Plan: TripFrame Phase 5
 
-**Feature**: `004-tripframe-phase4`
+**Feature**: `005-tripframe-phase5`
 **Plan version**: 1.0
 **Created**: 2026-03-29
-**Status**: Planning
+**참조**: spec.md v1.0, TF-MTG-002, TF-TECH-001
 
 ---
 
-## 1. Tech Stack
+## 아키텍처 결정
 
-Phase 3 스택 유지. 신규 패키지 3개 추가. TF-TECH-001 의사결정 반영.
+### AD-P5-001: EAS Dev Build 전환 순서
+- **결정**: Dev Build 전환 → 안정화 → SDK 업그레이드 (동시 진행 금지)
+- **근거**: TF-MTG-002 Expert 2 강력 권고. 동시 진행 시 디버깅 원인 특정 불가.
+- **EAS Build 트리거**: main 머지 시에만 (PR마다 트리거 금지 — 무료 티어 30빌드/월 관리)
 
-| 영역 | 기술 | 변경 |
-|------|------|------|
-| UI | NativeWind v4 + React Native | 기존 유지 |
-| 상태 관리 | Zustand | useSettingsStore 신규 추가 |
-| 날짜 입력 | `@react-native-community/datetimepicker` | 신규 추가 |
-| 사용자 데이터 저장 | `expo-sqlite/kv-store` | **신규 추가** — AsyncStorage 교체, import 1줄 변경 |
-| 암호화 | `expo-crypto` (AES-256-GCM) | **신규 추가** — Expo Go/Dev Build 모두 동작 |
-| Backend | Supabase (기존) | OAuth Redirect URL 등록만 |
-| 날짜 | date-fns | 기존 유지 |
-| 테스트 | Playwright | E2E 업데이트 |
-| 코드 품질 | ESLint (기존 + 규칙 추가) | no-any, max-lines-per-function |
+### AD-P5-002: gapKey 설계
+- **결정**: `${fromLocation}-${toLocation}-${dayIndex}` (이벤트 시간 독립적)
+- **근거**: 이벤트 시간 미세 변경 시 gapKey 변화 → RESOLVED 상태 유실 방지 (TF-MTG-002 Expert 2)
+- **단위 테스트**: 이벤트 시간 변경 시 gapKey 불변 확인
 
-> **Phase 5에서 추가 예정**: expo-secure-store (마스터 키 하드웨어 보관, Dev Build 전환 후), expo-sqlite Full SQL (참조 데이터 DB), Drizzle ORM (선택)
+### AD-P5-003: resolvedGapIds 저장 구조
+- **결정**: Gap은 파생 데이터 원칙 유지. RESOLVED 상태를 별도 저장소로 외부 관리.
+- **구조**: `{ [tripId]: { [gapKey]: { resolvedAt: ISO-8601, method: string } } }`
+- **저장**: encryptedStorage (기존 패턴 동일)
+- **Constitution 준수**: Gap 자체에 상태 필드 추가 금지
+
+### AD-P5-004: 이동 체크 상태 통합
+- **결정**: `useGapStore.ts` 신규 생성 — 기존 useTripStore의 Gap 관련 상태 + 교통 옵션 선택 상태 통합
+- **GapCard 확장**: 탭 시 교통 옵션 인라인 렌더링 (SuggestionScreen 컴포넌트 재활용)
+- **E2E 전략**: gap.spec + suggestion.spec → moveCheck.spec 통합 재작성 (탭 재편과 번들)
+
+### AD-P5-005: iCal 아키텍처
+- **결정**: `packages/core/logic/exportIcal.ts` 순수 함수 (Logic-UI 분리 원칙)
+- **커스텀 프로퍼티**: RFC 5545 `X-` prefix 허용 범위 내
+- **파일 처리**: apps/mobile에서 expo-sharing + expo-file-system (Core 패키지 비포함)
 
 ---
 
-## 2. Architecture
+## 구현 순서 (의존성 그래프)
 
-### 2-0. 스토리지 + 암호화 전환 (신규, P0) — TF-TECH-001 결정
-
-**2단계 암호화 전략 (TF-MTG-001 C레벨 결정 #1)**
-
-| 단계 | 암호화 방식 | 키 보관 | 환경 | Phase |
-|------|-----------|--------|------|-------|
-| Phase 4 | expo-crypto AES-256-GCM | kv-store (약점: 루팅 기기) | Expo Go + Dev Build 모두 동작 | **현재** |
-| Phase 5+ | expo-crypto AES-256-GCM | expo-secure-store (하드웨어 보안 모듈) | Dev Build 필수 | 업그레이드 |
-
-**Step 1 — AsyncStorage → expo-sqlite/kv-store (import 교체)**
-
-```typescript
-// 기존
-import AsyncStorage from '@react-native-async-storage/async-storage'
-// 변경 후 — Zustand persist 코드 수정 불필요, API 완전 호환
-import AsyncStorage from 'expo-sqlite/kv-store'
 ```
+Phase 5.0 인프라 (병렬 불가, 순차)
+  └─ TASK-093: EAS Dev Build 설정 + Android 빌드
+  └─ TASK-094: expo-secure-store 마스터 키 업그레이드 (093 완료 후)
 
-**Step 2 — 암호화 래퍼 (expo-crypto AES-256-GCM)**
+Phase 5.1 예약 루프 (독립, 093 완료 후 병렬 가능)
+  └─ TASK-095: Gap RESOLVED 상태 + useGapStore + gapKey 설계
 
-```typescript
-// src/storage/encryptedStorage.ts
-import * as Crypto from 'expo-crypto'
-import AsyncStorage from 'expo-sqlite/kv-store'
+Phase 5.2 탭 재편 (095 완료 후)
+  └─ TASK-096: 4탭 구조 재편 + 이동 체크 통합 + 딥링크 + E2E 수정
 
-const MASTER_KEY_STORAGE = 'tripframe_master_key'
+Phase 5.3 내보내기 (독립, 093 완료 후 병렬 가능)
+  └─ TASK-097: iCal Export (generateIcal + 공유 시트 + 안내 화면)
 
-async function getMasterKey(): Promise<string> {
-  let key = await AsyncStorage.getItem(MASTER_KEY_STORAGE)
-  if (!key) {
-    // 최초 실행 시 랜덤 256비트 키 생성
-    const bytes = await Crypto.getRandomBytesAsync(32)
-    key = Buffer.from(bytes).toString('hex')
-    await AsyncStorage.setItem(MASTER_KEY_STORAGE, key)
-  }
-  return key
-}
-
-export const encryptedStorage = {
-  getItem: async (key: string): Promise<string | null> => {
-    const encrypted = await AsyncStorage.getItem(key)
-    if (!encrypted) return null
-    return decrypt(encrypted, await getMasterKey())
-  },
-  setItem: async (key: string, value: string): Promise<void> => {
-    const masterKey = await getMasterKey()
-    await AsyncStorage.setItem(key, encrypt(value, masterKey))
-  },
-  removeItem: async (key: string): Promise<void> => AsyncStorage.removeItem(key),
-}
-
-// useTripStore, useSettingsStore의 AsyncStorage → encryptedStorage로 교체
-// Phase 5에서 getMasterKey()의 저장소만 AsyncStorage → expo-secure-store로 교체
-//   → 데이터 암호화 로직 전체 유지, 키 보관 위치만 변경
-```
-
-**마이그레이션 전략**:
-- 앱 시작 시 기존 AsyncStorage 평문 데이터 감지 → 암호화하여 kv-store에 재저장 → 기존 키 삭제
-- `@tripframe/core` 변경 없음 (Constitution III-1 준수 — store 계층만 영향)
-
-### 2-0b. 온보딩 플로우 (신규, P0)
-
-```typescript
-// src/screens/OnboardingScreen.tsx
-// 표시 조건: encryptedStorage에 'onboarding_complete' 키가 없을 때
-
-const SLIDES = [
-  { title: '여행의 빈 칸을 찾아드려요', subtitle: '이동수단이 빠진 구간을 자동으로 감지해요', icon: '🔍' },
-  { title: '집 출발 시간을 역산해요', subtitle: '항공편 시간에서 거꾸로 계산해 몇 시에 나가야 하는지 알려드려요', icon: '⏱' },
-  { title: '지금 시작해볼까요?', subtitle: '첫 여행을 만들어보세요', cta: '시작하기' },
-]
-
-// App.tsx에서 onboarding_complete 플래그 확인 → false면 OnboardingScreen 표시
-// 완료 또는 건너뛰기 → 플래그 저장 → HomeScreen 진입
-```
-
-### 2-1. useSettingsStore (신규)
-
-```typescript
-// src/store/useSettingsStore.ts
-interface Settings {
-  luggageSize: 'carry-on' | 'checked'
-  transportPreference: 'transit' | 'taxi' | 'any'
-  bufferLevel: 'tight' | 'normal' | 'relaxed'
-}
-
-interface SettingsStore {
-  settings: Settings
-  updateSettings: (updates: Partial<Settings>) => void
-}
-
-// AsyncStorage persist (useTripStore 패턴 동일)
-// 기본값: { luggageSize: 'carry-on', transportPreference: 'any', bufferLevel: 'normal' }
-```
-
-### 2-2. 역산 로직 설정 연동
-
-```typescript
-// packages/core/logic/applySettings.ts (신규 순수 함수)
-export function applyBufferLevel(
-  steps: ReverseCalcStep[],
-  bufferLevel: Settings['bufferLevel']
-): ReverseCalcStep[]
-
-// bufferLevel 매핑
-// 'tight'    → factor 0.8 (기본 buffer × 0.8)
-// 'normal'   → factor 1.0 (기본값)
-// 'relaxed'  → factor 1.2 (기본 buffer × 1.2)
-```
-
-### 2-3. 제안 로직 교통 선호도 연동
-
-```typescript
-// packages/core/logic/sortOptions.ts (신규 순수 함수)
-export function sortByPreference(
-  options: TransportOption[],
-  preference: Settings['transportPreference']
-): TransportOption[]
-
-// preference = 'transit' → 대중교통 타입 옵션을 최상단으로
-// preference = 'taxi'    → 택시 타입 옵션을 최상단으로
-// preference = 'any'     → 기존 순서 유지 (비용 기준)
-```
-
-### 2-4. 교통 데이터 내장 DB 구조
-
-```typescript
-// packages/core/data/transport-rules.ts (확장)
-interface TransportRoute {
-  id: string
-  from: string         // 출발지 코드 (예: 'ICN', 'GMP', 'SEOUL')
-  to: string           // 도착지 코드
-  type: 'airport-bus' | 'ktx' | 'srt' | 'subway'
-  durationMin: number  // 소요시간(분)
-  firstDeparture: string  // 첫차 HH:MM
-  lastDeparture: string   // 막차 HH:MM
-  intervalMin: number     // 배차 간격(분)
-  isEstimate: boolean     // true면 "추정값" 레이블 표시
-}
-
-export const TRANSPORT_ROUTES: TransportRoute[] = [
-  // 공항버스 인천 ↔ 서울 주요 구간
-  // KTX 서울-부산, 서울-대전 등
-]
-```
-
-### 2-5. 날짜 Picker 전략
-
-- **iOS/Android**: `@react-native-community/datetimepicker` (네이티브 피커)
-- **Web (Expo)**: `Platform.OS === 'web'` → `<input type="date">` HTML 네이티브
-- `TripFormModal.tsx`에서 플랫폼 분기 처리
-
-```typescript
-// 플랫폼 분기 패턴
-const DateInput = Platform.OS === 'web'
-  ? WebDateInput      // <TextInput> with type="date" via web props
-  : NativeDatePicker  // DateTimePicker
+Phase 5.4 테스트 + 배포 준비 (모두 완료 후)
+  └─ TASK-098: Maestro E2E 기초 + 온보딩 웹 수정 + B-01~05 번들
+  └─ TASK-099: Phase 5 완료보고서 + Alpha 배포 체크리스트
 ```
 
 ---
 
-## 3. 화면별 변경 사항
+## 태스크별 기술 계획
 
-### SettingsScreen.tsx
+### TASK-093: EAS Dev Build 설정 · 4h [P0]
 
-- 현재: 라디오 버튼 UI만 (저장 없음)
-- Phase 4: useSettingsStore 연결 → 선택값 즉시 저장, 앱 재시작 후 복원
+**목표**: Expo Go → EAS Development Build 전환. Android 실기기 정상 설치.
 
-### ReverseCalcDetailScreen.tsx
+**구현 단계**:
+1. `eas.json` 생성 — development / preview / production 프로필
+2. `app.json` → `app.config.ts` 전환 검토 (동적 설정 필요 시)
+3. `eas build --profile development --platform android` 첫 빌드
+4. GitHub Actions 워크플로우: main 머지 시에만 `eas build` 트리거
+5. Android 실기기 APK 설치 + 기존 기능 동작 확인
+6. EAS Build 로그에서 CocoaPods/Gradle 오류 체크 (반나절 버퍼 확보)
 
-- 현재: MOCK_REVERSE_CALC 기반 고정 bufferTime
-- Phase 4: `applyBufferLevel(steps, settings.bufferLevel)` 적용
+**리스크 대응**:
+- Gradle 의존성 충돌 → `npx expo prebuild` 후 android/ 폴더 수동 점검
+- iOS 빌드 → EAS Cloud 의존, 로컬 건드리지 않음
+- SDK 업그레이드 요청 발생 시 → 무시하고 현재 SDK 유지
 
-### SuggestionScreen.tsx
-
-- 현재: 옵션 목록 비용 기준 정렬
-- Phase 4: `sortByPreference(options, settings.transportPreference)` 적용
-
-### GapAnalysisScreen.tsx
-
-- 현재: Gap 목록만 표시
-- Phase 4: 하단에 FreeTime 카드 추가 (`calculateFreeTime` 호출)
-
-### TripFormModal.tsx
-
-- 현재: 날짜 TextInput (자유 입력)
-- Phase 4: DatePicker 컴포넌트로 교체
+**완료 기준**: Android Dev Build APK 설치 성공 + `pnpm --filter mobile web` + Playwright 97/97 PASS
 
 ---
 
-## 4. 구현 순서
+### TASK-094: expo-secure-store 마스터 키 업그레이드 · 3h [P0] · (093)
 
-전문가 리뷰(TF-REVIEW-000) 반영하여 P0 보안/온보딩 항목을 최우선으로 재정렬.
+**목표**: getMasterKey() 저장소를 kv-store → SecureStore로 교체. 데이터 손실 없는 마이그레이션.
 
-```
-Phase 4.0 — 스토리지 전환 + 암호화 + 온보딩 [P0, 신규] (2일)
-  └─ AsyncStorage → expo-sqlite/kv-store (import 1줄)
-  └─ expo-crypto AES-256-GCM 암호화 래퍼 구현 + 마이그레이션
-  └─ 온보딩 3장 스와이프, 완료 플래그 저장
+**구현 단계**:
+1. `expo-secure-store` 패키지 설치
+2. `encryptedStorage.ts` getMasterKey() 수정:
+   - SecureStore.getItemAsync → 키 존재 시 반환
+   - 없으면 SecureStore.setItemAsync → 성공 시 kv-store 구 키 삭제
+   - SecureStore 저장 실패 → kv-store 키 유지 (폴백)
+3. 마이그레이션 흐름: kv-store 키 존재 → SecureStore 이전 성공 확인 → kv-store 삭제
+4. 마이그레이션 중 App.tsx 로딩 인디케이터 표시
+5. 단위 테스트: 기존 5개 그대로 통과 확인 + 마이그레이션 3개 추가 (성공/실패폴백/중단 재시도)
 
-Phase 4.1 — 설정 기능 실구현 (3일)
-  └─ useSettingsStore, applyBufferLevel, sortByPreference
-  └─ SettingsScreen 연동, ReverseCalc + Suggestion 적용
+**핵심 제약**: 암호화/복호화 로직 절대 변경 금지. getMasterKey() 저장소 1곳만 교체.
 
-Phase 4.2 — Google OAuth + 클라우드 동기화 (1일)
-  └─ Supabase Redirect URLs 등록 (인프라)
-  └─ 동기화 동작 검증, 설정 탭 상태 표시
-
-Phase 4.3 — 공백감지 FreeTime UI + 타입 정리 (1일)
-  └─ GapAnalysisScreen 하단 FreeTime 카드 추가
-  └─ FreeTimeResult 타입 logic/ → types/trip.ts 이동 (TD-07)
-
-Phase 4.4 — UX 개선 + 코드 품질 (2일)
-  └─ 메뉴명 결정 + 일괄 변경
-  └─ TripFormModal DatePicker
-  └─ ESLint 규칙 추가 (no-any, max-lines-per-function, no-restricted-imports)
-
-Phase 4.5 — 교통 데이터 내장 DB (2일)
-  └─ transport-rules.ts 구조 확장
-  └─ 인천/김포 공항버스 10+ 노선, KTX 10개 노선
-
-Phase 4.6 — 테스트 & 결과서 (2일)
-  └─ E2E 업데이트 (목표: 95+ PASS)
-  └─ Phase 4 완료보고서, Phase 5 태스크 초안
-```
+**완료 기준**: 기존 암호화 단위 테스트 5개 + 마이그레이션 테스트 3개 PASS. Android 실기기에서 데이터 복원 확인.
 
 ---
 
-## 5. 리스크
+### TASK-095: Gap RESOLVED 상태 + useGapStore · 4h [P1] · (093)
 
-| 리스크 | 영향 | 대응 |
-|--------|------|------|
-| expo-crypto AES-GCM 구현 오류로 데이터 복호화 실패 | 높음 | 마이그레이션 전 평문 백업 유지, 암호화/복호화 단위 테스트 필수 |
-| AsyncStorage → kv-store 마이그레이션 데이터 손실 | 높음 | 마이그레이션 전 기존 AsyncStorage 백업 읽기 후 검증, 롤백 로직 포함 |
-| expo-crypto 웹 환경 미지원 | 중 | Platform.OS === 'web' 시 btoa/SubtleCrypto fallback 적용 |
-| DatePicker 웹/모바일 크로스 플랫폼 | 중 | Platform 분기, 웹은 HTML input 우선 |
-| 역산 bufferLevel 적용 시 E2E 하드코딩 시각 변경 | 중 | E2E는 'normal' 설정 기준으로 고정 |
-| Supabase OAuth 등록 후에도 redirect 오류 | 낮음 | Supabase 문서 기준으로 단계별 검증 |
-| 메뉴명 결정 지연 | 낮음 | TASK-078을 Phase 4.4 마지막 순서로 배치 |
-| 교통 데이터 정확도 | 낮음 | isEstimate 플래그로 명시, 추후 공공API 보완 |
+**목표**: 예약 완료 루프 완성. Gap 카드에 "예약 완료" 버튼 상시 노출.
+
+**구현 단계**:
+1. `packages/core/types/trip.ts` — `GapStatus: 'DANGER' | 'WARNING' | 'RESOLVED'` 타입 추가
+2. `packages/core/logic/gapEngine.ts` — gapKey 생성 함수 `makeGapKey(fromLocation, toLocation, dayIndex): string`
+3. `apps/mobile/src/store/useGapStore.ts` 생성:
+   - `resolvedGaps: Record<tripId, Record<gapKey, {resolvedAt, method}>>` 상태
+   - `resolveGap(tripId, gapKey, method)` / `unresolveGap()` 액션
+   - encryptedStorage persist
+4. `GapCard` 컴포넌트 — "예약 완료" 버튼 추가 (AppState 자동 팝업 금지)
+5. RESOLVED 카드: 초록 테두리 + ✓ 아이콘, 목록 하단 정렬
+6. 단위 테스트: gapKey 안정성 (이벤트 시간 변경 시 불변 확인)
+
+**완료 기준**: RESOLVED 상태 저장/복원 + 카드 UI 변경 + gapKey 단위 테스트 PASS
 
 ---
 
-*Phase 4 목표: "암호화된 저장소, 온보딩, 설정 실기능화, 구글 로그인, 공백 옆 여유 시간이 모두 동작하는 앱"*
-*TF-REVIEW-000 + TF-TECH-001 + TF-MTG-001 반영 (2026-03-29)*
+### TASK-096: 4탭 구조 재편 + 이동 체크 + 딥링크 + E2E · 5h [P1] · (095)
+
+**목표**: 5탭 → 4탭. 공백감지+제안카드 → 이동 체크 통합. 탭 간 딥링크. E2E 전면 수정.
+
+**구현 단계**:
+1. `App.tsx` 탭바: 공백감지/제안카드 제거 → "이동 체크" 단일 탭 추가
+2. `MoveCheckScreen.tsx` 신규 생성:
+   - Gap 카드 목록 (useGapStore + useTripStore 구독)
+   - Gap 카드 탭 → 교통 옵션 인라인 펼침 (SuggestionScreen 컴포넌트 분리 재활용)
+   - "예약 완료" 버튼 인라인 (TASK-095 통합)
+3. `navigateTo(tab, params)` 헬퍼 — App.tsx 또는 별도 navigation 파일
+4. 딥링크: 역산 탭 → 일정 탭 Day 스크롤, 이동 체크 → 특정 Gap 펼침
+5. E2E 수정 (번들 필수):
+   - `gap.spec.ts` + `suggestion.spec.ts` → `moveCheck.spec.ts` 통합
+   - 탭 이름 변경 반영 (모든 spec 파일)
+   - TASK-082에서 검증한 설정 복원 E2E (B-03) 포함 재검증
+6. 전체 E2E PASS 확인
+
+**완료 기준**: 4탭 동작 + 이동 체크 통합 UX + 딥링크 + 전체 E2E PASS (기존 97개 재편 후 동등 커버리지)
+
+---
+
+### TASK-097: iCal Export · 3h [P2] · (093)
+
+**목표**: RFC 5545 표준 .ics 내보내기 + TripFrame 커스텀 프로퍼티 + 사용자 안내 화면.
+
+**구현 단계**:
+1. `packages/core/logic/exportIcal.ts`:
+   - `generateIcal(trip: Trip): string` 순수 함수
+   - VCALENDAR + VTIMEZONE(Asia/Seoul) + VEVENT 블록
+   - VEVENT: DTSTART, DTEND, SUMMARY, DESCRIPTION, LOCATION
+   - X-TRIPFRAME-GAP-STATUS, X-TRIPFRAME-RESOLVED-AT 커스텀 프로퍼티
+2. `apps/mobile`에서 expo-sharing + expo-file-system:
+   - .ics 파일 임시 저장 → 공유 시트 열기
+3. "내보내기 완료" 안내 화면:
+   - "파일이 생성되었습니다. Google Calendar → 가져오기에서 추가하세요."
+   - Google Calendar 설명 링크(선택)
+4. 여행 상세 화면(일정 탭 헤더) 또는 홈 여행 카드 더보기(···) 메뉴에 "내보내기" 옵션
+5. 단위 테스트: generateIcal 출력 포맷 검증 (VCALENDAR 시작/종료, VEVENT 필드, X-TRIPFRAME 포함)
+
+**완료 기준**: .ics 파일 생성 + 공유 시트 열림 + generateIcal 단위 테스트 PASS
+
+---
+
+### TASK-098: Maestro 기초 + 온보딩 수정 + B-01~05 번들 · 3h [P1] · (094, 096)
+
+**목표**: 네이티브 전용 Maestro 시나리오 2~3개 + Phase 4 잔여 이슈 일괄 처리.
+
+**구현 단계**:
+1. Maestro 설치 + `.maestro/` 디렉터리 설정
+2. 시나리오 1: SecureStore 마이그레이션 (kv-store 키 존재 → 이전 → 삭제)
+3. 시나리오 2: "예약 완료" 버튼 탭 → RESOLVED 저장 → 앱 재시작 → 상태 복원
+4. B-01 온보딩 웹 수정: `Platform.OS === 'web'` 분기 최소 적용 (Playwright 통과 수준)
+5. B-04 로그아웃 로컬 데이터 유지 → Maestro 시나리오 추가 또는 Playwright 검증
+6. B-05 마이그레이션 데이터 손실 없음 → TASK-094에 이미 포함됨 확인
+
+**완료 기준**: Maestro 2개 시나리오 PASS + 온보딩 Playwright 시각 검증 개선
+
+---
+
+### TASK-099: Phase 5 완료보고서 + Alpha 배포 체크리스트 · 1h · (모든 태스크)
+
+**목표**: 문서화 완료 + Alpha 내부 배포 준비 상태 확인.
+
+**구현 단계**:
+1. `report/260329/phase5/PHASE5_완료보고서.md` 작성
+2. `report/260329/phase5/E2E_TEST_REPORT.md` 작성 (Playwright MCP 화면 검증 포함)
+3. Alpha 배포 체크리스트:
+   - [ ] Dev Build APK 생성 성공
+   - [ ] expo-secure-store 마이그레이션 완료
+   - [ ] 이동 체크 탭 동작 확인
+   - [ ] RESOLVED 상태 저장/복원 확인
+   - [ ] iCal Export Google Calendar 임포트 확인
+   - [ ] 전체 E2E PASS
+4. Notion DB 등록
+
+---
+
+## 진행 현황 표 (초기값)
+
+| Phase | 태스크 | 완료 | 진행률 |
+|-------|--------|------|--------|
+| 5.0 인프라 | 093~094 | 0/2 | 0% |
+| 5.1 예약 루프 | 095 | 0/1 | 0% |
+| 5.2 탭 재편 | 096 | 0/1 | 0% |
+| 5.3 내보내기 | 097 | 0/1 | 0% |
+| 5.4 테스트 + 문서 | 098~099 | 0/2 | 0% |
+| **합계** | **7** | **0** | **0%** |
+
+---
+
+## 리스크 레지스터
+
+| 리스크 | 영향 | 확률 | 대응 |
+|--------|------|------|------|
+| Gradle 의존성 충돌 | 1~2일 블로킹 | 높음 | `npx expo prebuild` 후 수동 점검. 반나절 버퍼 확보 |
+| SecureStore 저장 실패 | 데이터 접근 불가 | 낮음 | kv-store 폴백 + 재시도 로직 |
+| E2E 대량 깨짐 (탭 재편) | 2~3시간 추가 | 확정 | TASK-096에 번들. 분리 금지 |
+| EAS 크레딧 소진 | 빌드 불가 | 중간 | main 머지 시에만 트리거 |
+
+---
+
+*plan version 1.0 | 2026-03-29*

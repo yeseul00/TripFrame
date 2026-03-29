@@ -3,6 +3,19 @@ import { TripEvent, Gap, GapSeverity } from '../types/trip';
 const WARNING_THRESHOLD_MINUTES = 30;
 
 /**
+ * Gap을 안정적으로 식별하는 키를 생성한다.
+ * 이벤트 시간이 변경되어도 키가 변하지 않도록 위치와 dayIndex만 사용.
+ *
+ * @param fromLocation 출발 위치
+ * @param toLocation   도착 위치
+ * @param dayIndex     여행 날짜 인덱스 (0-based)
+ * @returns 안정적인 gapKey 문자열
+ */
+export function makeGapKey(fromLocation: string, toLocation: string, dayIndex: number): string {
+  return `${fromLocation}-${toLocation}-${dayIndex}`;
+}
+
+/**
  * "HH:mm" 형식 두 시간의 차이를 분 단위로 반환합니다.
  */
 function diffMinutes(fromTime: string, toTime: string): number {

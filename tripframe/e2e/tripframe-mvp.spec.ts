@@ -15,8 +15,8 @@ test.describe('TripFrame MVP E2E Tests', () => {
 
     // 탭 바 확인
     await expect(page.locator('text=일정').first()).toBeVisible();
-    await expect(page.locator('text=공백감지').first()).toBeVisible();
-    await expect(page.locator('text=제안카드').first()).toBeVisible();
+    await expect(page.locator('text=이동 체크').first()).toBeVisible();
+    await expect(page.locator('text=이동 체크').first()).toBeVisible();
     await expect(page.locator('text=역산').first()).toBeVisible();
 
     // 스크린샷 캡처
@@ -68,12 +68,12 @@ test.describe('TripFrame MVP E2E Tests', () => {
     await page.screenshot({ path: 'test-results/screenshots/04-day3-warning.png', fullPage: true });
   });
 
-  test('TC-005: 공백감지 탭 동작 확인', async ({ page }) => {
-    // 공백감지 탭 클릭
-    await page.locator('text=공백감지').click();
+  test('TC-005: 이동 체크 탭 동작 확인', async ({ page }) => {
+    // 이동 체크 탭 클릭
+    await page.locator('text=이동 체크').click();
     await page.waitForTimeout(500);
 
-    // 공백감지 화면이 표시되는지 확인
+    // 이동 체크 화면이 표시되는지 확인
     // (실제 구현에 따라 다를 수 있음)
     await page.screenshot({ path: 'test-results/screenshots/05-gap-detection.png', fullPage: true });
   });
@@ -88,11 +88,11 @@ test.describe('TripFrame MVP E2E Tests', () => {
   });
 
   test('TC-007: 탭 전환이 정상적으로 동작함', async ({ page }) => {
-    // 일정 → 공백감지 → 역산 → 일정 순서로 전환
+    // 일정 → 이동 체크 → 역산 → 일정 순서로 전환
     await page.locator('text=일정').click();
     await page.waitForTimeout(300);
 
-    await page.locator('text=공백감지').click();
+    await page.locator('text=이동 체크').click();
     await page.waitForTimeout(300);
 
     await page.locator('text=역산').click();

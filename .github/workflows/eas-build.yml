@@ -1,0 +1,42 @@
+name: EAS Build (Android)
+
+# TF-MTG-002: main 머지 시에만 트리거 (PR 빌드 금지 — 무료 티어 30빌드/월 관리)
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-android:
+    name: EAS Dev Build — Android
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tripframe/apps/mobile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        working-directory: tripframe
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: EAS Build — development (Android)
+        run: eas build --profile development --platform android --non-interactive

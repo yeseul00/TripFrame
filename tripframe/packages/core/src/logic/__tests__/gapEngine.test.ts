@@ -7,9 +7,9 @@
  *   TC-009, TC-010, TC-011, TC-012, TC-013, TC-014, TC-015
  */
 
-import { detectGaps } from '../gapEngine';
+import { detectGaps, makeGapKey } from '../gapEngine';
 import { MOCK_TRIP } from '../../data/mock';
-import type { TripEvent } from '../../types/trip';
+import { TripEvent } from '../../types/trip';
 
 // ─── 헬퍼 ────────────────────────────────────────────────────────────────────
 
@@ -186,5 +186,27 @@ describe('detectGaps — 경계값 및 엣지 케이스', () => {
 
     expect(gaps[0].fromEventId).toBe(from.id);
     expect(gaps[0].toEventId).toBe(to.id);
+  });
+});
+
+// ─── makeGapKey 안정성 테스트 (TASK-095) ──────────────────────────────────
+
+describe('makeGapKey', () => {
+  it('위치와 dayIndex로 안정적인 키를 생성한다', () => {
+    expect(makeGapKey('하카타', '유후인', 1)).toBe('하카타-유후인-1');
+  });
+
+  it('이벤트 시간이 달라져도 같은 위치/dayIndex이면 키가 동일하다', () => {
+    const key1 = makeGapKey('하카타', '유후인', 1);
+    const key2 = makeGapKey('하카타', '유후인', 1);
+    expect(key1).toBe(key2);
+  });
+
+  it('출발/도착 위치가 다르면 키가 다르다', () => {
+    expect(makeGapKey('하카타', '유후인', 0)).not.toBe(makeGapKey('유후인', '하카타', 0));
+  });
+
+  it('dayIndex가 다르면 같은 위치쌍도 키가 다르다', () => {
+    expect(makeGapKey('하카타', '유후인', 0)).not.toBe(makeGapKey('하카타', '유후인', 1));
   });
 });

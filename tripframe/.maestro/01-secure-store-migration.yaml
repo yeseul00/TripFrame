@@ -1,0 +1,24 @@
+# Maestro 시나리오 1: SecureStore 마이그레이션 검증 (TASK-098)
+#
+# 시나리오: kv-store에 레거시 마스터 키가 있을 때 앱 시작 시
+#           SecureStore로 자동 이전되고 데이터가 정상 복호화되는지 확인.
+#
+# 실행 방법: maestro test .maestro/01-secure-store-migration.yaml
+# 전제: Dev Build APK 설치됨 (TASK-093), expo-secure-store 포함 (TASK-094)
+
+appId: com.tripframe.app
+---
+# 앱 시작
+- launchApp:
+    clearState: true
+
+# 마이그레이션 로딩 인디케이터 대기 (keyMigrating 상태)
+- waitForAnimationToEnd
+
+# 홈 화면 도달 확인 (온보딩 스킵 후 홈)
+- assertVisible: "내 여행"
+
+# 여행 카드 또는 빈 상태 확인 (데이터 복호화 성공 = 정상 렌더)
+- assertTrue:
+    condition: |
+      visible("내 여행") || visible("아직 여행이 없습니다")

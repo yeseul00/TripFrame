@@ -28,6 +28,9 @@ export interface TripEvent {
 
 export type GapSeverity = 'DANGER' | 'WARNING' | 'OK';
 
+/** RESOLVED: 사용자가 예약 완료로 표시한 공백 상태 (외부 저장소 관리, Gap 파생 데이터와 별도) */
+export type GapStatus = 'DANGER' | 'WARNING' | 'RESOLVED';
+
 export interface Gap {
   id: string;
   fromEventId: string;

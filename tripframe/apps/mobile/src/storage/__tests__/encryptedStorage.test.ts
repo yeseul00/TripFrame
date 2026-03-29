@@ -1,6 +1,7 @@
 /**
- * encryptedStorage 단위 테스트 (TASK-084)
+ * encryptedStorage 단위 테스트 (TASK-084 + TASK-094)
  * 정상 암호화/복호화, 손상 데이터, 키 없는 초기 상태
+ * + SecureStore 마이그레이션: 성공 / 실패 폴백 / 중단 후 재시도
  */
 
 // ─── 모의 KV 스토어 ───────────────────────────────────────────────
@@ -15,6 +16,23 @@ jest.mock('../native-kv', () => ({
     }),
     removeItem: jest.fn(async (key: string) => {
       delete kvStore[key]
+    }),
+  },
+}))
+
+// ─── 모의 expo-secure-store ──────────────────────────────────────
+const secureStore: Record<string, string> = {}
+let secureStoreShouldFail = false
+
+jest.mock('../secure-store', () => ({
+  SecureStore: {
+    getItemAsync: jest.fn(async (key: string) => secureStore[key] ?? null),
+    setItemAsync: jest.fn(async (key: string, value: string) => {
+      if (secureStoreShouldFail) throw new Error('SecureStore unavailable')
+      secureStore[key] = value
+    }),
+    deleteItemAsync: jest.fn(async (key: string) => {
+      delete secureStore[key]
     }),
   },
 }))
@@ -35,19 +53,21 @@ Object.defineProperty(globalThis, 'crypto', { value: webcrypto, writable: true }
 
 // ─── 테스트 대상 import ───────────────────────────────────────────
 // jest.mock 선언 이후에 import 해야 mock이 적용됨
-import { encryptedStorage } from '../encryptedStorage'
+import { encryptedStorage, migrateMasterKey } from '../encryptedStorage'
 
 // ─── 헬퍼 ────────────────────────────────────────────────────────
 
-function clearKvStore() {
+function clearStores() {
   Object.keys(kvStore).forEach((k) => delete kvStore[k])
+  Object.keys(secureStore).forEach((k) => delete secureStore[k])
+  secureStoreShouldFail = false
 }
 
-// ─── 테스트 케이스 ───────────────────────────────────────────────
+// ─── 기존 테스트 케이스 (TASK-084) ──────────────────────────────
 
 describe('encryptedStorage', () => {
   beforeEach(() => {
-    clearKvStore()
+    clearStores()
     jest.clearAllMocks()
   })
 
@@ -71,18 +91,18 @@ describe('encryptedStorage', () => {
     expect(result).toBeNull()
   })
 
-  // 케이스 3: 키 없는 초기 상태 → 자동 키 생성 후 저장
+  // 케이스 3: 키 없는 초기 상태 → 자동 키 생성 후 SecureStore에 저장
   it('마스터 키가 없는 초기 상태에서 setItem/getItem이 정상 동작한다', async () => {
-    // kvStore 완전히 비어있는 상태 (clearKvStore로 이미 처리)
     expect(Object.keys(kvStore)).toHaveLength(0)
+    expect(Object.keys(secureStore)).toHaveLength(0)
 
     const key = 'fresh-key'
     const value = '{"trip":"fukuoka"}'
 
     await encryptedStorage.setItem(key, value)
 
-    // 마스터 키가 kv-store에 저장되었는지 확인
-    expect(kvStore['tripframe_master_key']).toBeDefined()
+    // TASK-094: 마스터 키가 SecureStore에 저장되었는지 확인
+    expect(secureStore['tripframe_master_key']).toBeDefined()
 
     const result = await encryptedStorage.getItem(key)
     expect(result).toBe(value)
@@ -101,5 +121,58 @@ describe('encryptedStorage', () => {
   it('존재하지 않는 키에 대해 getItem은 null을 반환한다', async () => {
     const result = await encryptedStorage.getItem('non-existent')
     expect(result).toBeNull()
+  })
+})
+
+// ─── SecureStore 마이그레이션 테스트 (TASK-094) ──────────────────
+
+describe('migrateMasterKey', () => {
+  beforeEach(() => {
+    clearStores()
+    jest.clearAllMocks()
+  })
+
+  // 마이그레이션 1: kv-store 키 → SecureStore 이전 성공 → kv-store 삭제
+  it('kv-store에 마스터 키가 있으면 SecureStore로 이전하고 kv-store 키를 삭제한다', async () => {
+    const legacyKeyHex = '42'.repeat(32) // 32바이트 hex
+    kvStore['tripframe_master_key'] = legacyKeyHex
+
+    await migrateMasterKey()
+
+    // SecureStore에 키 존재
+    expect(secureStore['tripframe_master_key']).toBe(legacyKeyHex)
+    // kv-store 구 키 삭제
+    expect(kvStore['tripframe_master_key']).toBeUndefined()
+  })
+
+  // 마이그레이션 2: SecureStore 실패 → kv-store 키 유지 (데이터 손실 방지)
+  it('SecureStore 저장 실패 시 kv-store 키를 유지한다 (폴백)', async () => {
+    const legacyKeyHex = '42'.repeat(32)
+    kvStore['tripframe_master_key'] = legacyKeyHex
+    secureStoreShouldFail = true
+
+    await migrateMasterKey()
+
+    // kv-store 키 여전히 존재 (폴백)
+    expect(kvStore['tripframe_master_key']).toBe(legacyKeyHex)
+    // SecureStore에 키 없음
+    expect(secureStore['tripframe_master_key']).toBeUndefined()
+  })
+
+  // 마이그레이션 3: 앱 강제 종료 후 재시도 — SecureStore와 kv-store 모두 존재 시 SecureStore 우선
+  it('SecureStore와 kv-store 모두 키가 있을 때 SecureStore 값을 우선 사용한다', async () => {
+    const secureKeyHex = 'aa'.repeat(32)
+    const kvKeyHex = 'bb'.repeat(32)
+    secureStore['tripframe_master_key'] = secureKeyHex
+    kvStore['tripframe_master_key'] = kvKeyHex
+
+    // setItem 후 복호화에 사용되는 키가 SecureStore의 키인지 확인
+    const value = '{"secure":"priority"}'
+    await encryptedStorage.setItem('priority-test', value)
+
+    // kv-store 키 삭제 후에도 복호화 가능 (SecureStore 키 사용)
+    delete kvStore['tripframe_master_key']
+    const result = await encryptedStorage.getItem('priority-test')
+    expect(result).toBe(value)
   })
 })

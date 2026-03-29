@@ -1,0 +1,45 @@
+# Maestro 시나리오 2: Gap RESOLVED 상태 저장 + 앱 재시작 후 복원 (TASK-098)
+#
+# 시나리오: "예약 완료" 버튼 탭 → RESOLVED 저장 → 앱 강제 종료 → 재시작 → 상태 복원 확인.
+#
+# 실행 방법: maestro test .maestro/02-gap-resolved-persistence.yaml
+# 전제: Dev Build APK 설치됨, 샘플 여행 데이터 존재
+
+appId: com.tripframe.app
+---
+# 앱 시작
+- launchApp:
+    clearState: false
+
+# 홈에서 여행 선택
+- waitForAnimationToEnd
+- tapOn: "후쿠오카 · 유후인"
+
+# 이동 체크 탭 진입
+- tapOn: "이동 체크"
+- waitForAnimationToEnd
+
+# 첫 번째 DANGER Gap 카드 펼침
+- tapOn: "DANGER"
+- waitForAnimationToEnd
+
+# "예약 완료" 버튼 탭
+- tapOn: "예약 완료"
+- waitForAnimationToEnd
+
+# RESOLVED 상태 확인 (초록 체크 또는 "예약 완료" 카드)
+- assertVisible: "예약 완료"
+
+# 앱 재시작 (강제 종료 후 재실행)
+- stopApp
+- launchApp:
+    clearState: false
+
+# 이동 체크 탭 재진입
+- waitForAnimationToEnd
+- tapOn: "후쿠오카 · 유후인"
+- tapOn: "이동 체크"
+- waitForAnimationToEnd
+
+# RESOLVED 상태가 복원되었는지 확인
+- assertVisible: "예약 완료"

@@ -2,7 +2,7 @@
  * encryptedStorage — AES-256-GCM 암호화 스토리지 래퍼 (TASK-084)
  *
  * Phase 4: expo-crypto AES-256-GCM, 마스터 키는 kv-store 저장
- * Phase 5: getMasterKey() 저장소를 expo-secure-store로 교체 예정
+ * Phase 5: getMasterKeyBytes() 저장소를 expo-secure-store로 교체 (TASK-094)
  *
  * Constitution Article VIII 준수 — 평문 AsyncStorage 저장 금지
  */
@@ -10,6 +10,7 @@
 import { Platform } from 'react-native'
 import * as Crypto from 'expo-crypto'
 import { KvStore } from './native-kv'
+import { SecureStore } from './secure-store'
 
 // ─────────────────────────────────────────────
 // 상수
@@ -36,15 +37,47 @@ function hexToUint8Array(hex: string): Uint8Array {
   return result
 }
 
+/**
+ * 마스터 키를 가져온다.
+ * 우선순위: SecureStore → kv-store(마이그레이션) → 신규 생성
+ *
+ * TASK-094: getMasterKey() 저장소 1곳만 교체. 암호화 로직 변경 없음.
+ */
 async function getMasterKeyBytes(): Promise<Uint8Array> {
-  const stored = await KvStore.getItem(MASTER_KEY_STORAGE_KEY)
-  if (stored) {
-    return hexToUint8Array(stored)
+  // 1. SecureStore에서 키 조회 (정상 경로 + 재시작 후 경로)
+  const secureKey = await SecureStore.getItemAsync(MASTER_KEY_STORAGE_KEY)
+  if (secureKey) {
+    return hexToUint8Array(secureKey)
   }
-  // 최초 실행 — 랜덤 256-bit 키 생성
+
+  // 2. kv-store에서 키 조회 (Phase 4 → Phase 5 마이그레이션 시나리오)
+  const kvKey = await KvStore.getItem(MASTER_KEY_STORAGE_KEY)
+  if (kvKey) {
+    try {
+      await SecureStore.setItemAsync(MASTER_KEY_STORAGE_KEY, kvKey)
+      const verify = await SecureStore.getItemAsync(MASTER_KEY_STORAGE_KEY)
+      if (verify === kvKey) {
+        // 이전 성공 → kv-store 구 키 삭제
+        await KvStore.removeItem(MASTER_KEY_STORAGE_KEY)
+      }
+      // verify 불일치 → kv-store 키 유지 (다음 실행 시 재시도)
+    } catch {
+      // SecureStore 저장 실패 → kv-store 키 유지(폴백) + 에러 로깅
+      console.warn('[encryptedStorage] SecureStore 마이그레이션 실패, kv-store 키 유지')
+    }
+    return hexToUint8Array(kvKey)
+  }
+
+  // 3. 최초 실행 — 랜덤 256-bit 키 생성
   const keyBytes = await Crypto.getRandomBytesAsync(KEY_LENGTH)
   const keyHex = bufferToHex(keyBytes.buffer as ArrayBuffer)
-  await KvStore.setItem(MASTER_KEY_STORAGE_KEY, keyHex)
+  try {
+    await SecureStore.setItemAsync(MASTER_KEY_STORAGE_KEY, keyHex)
+  } catch {
+    // SecureStore 저장 실패 → kv-store 폴백 (데이터 손실 방지)
+    console.warn('[encryptedStorage] SecureStore 키 저장 실패, kv-store 폴백')
+    await KvStore.setItem(MASTER_KEY_STORAGE_KEY, keyHex)
+  }
   return new Uint8Array(keyBytes)
 }
 
@@ -214,6 +247,22 @@ export const encryptedStorage = {
   removeItem: async (key: string): Promise<void> => {
     await rawRemove(key)
   },
+}
+
+// ─────────────────────────────────────────────
+// SecureStore 마스터 키 마이그레이션 (TASK-094)
+// App.tsx 시작 시 1회 호출 — 로딩 인디케이터 표시 용도
+// ─────────────────────────────────────────────
+
+/**
+ * 마스터 키를 kv-store → SecureStore로 마이그레이션한다.
+ * 웹에서는 no-op. 네이티브에서 getMasterKeyBytes()를 eagerly 호출하여
+ * 앱 데이터 접근 전 키 초기화를 완료한다.
+ */
+export async function migrateMasterKey(): Promise<void> {
+  if (Platform.OS === 'web') return
+  // getMasterKeyBytes() 내부에서 마이그레이션 로직 전체 처리
+  await getMasterKeyBytes()
 }
 
 // ─────────────────────────────────────────────

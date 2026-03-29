@@ -5,7 +5,7 @@ import { Trip, DayTimeline, TripEvent } from '@tripframe/core';
 import { MOCK_TRIP, MOCK_REVERSE_CALC } from '@tripframe/core';
 import type { ReverseCalcResult } from '@tripframe/core';
 
-type TabName = '일정' | '공백감지' | '제안카드' | '역산' | '설정';
+export type TabName = '일정' | '이동 체크' | '역산' | '설정';
 
 interface TripStore {
   currentTab: TabName;
@@ -13,10 +13,13 @@ interface TripStore {
   currentTripId: string | null;
   selectedDayIndex: number;
   reverseCalc: ReverseCalcResult;
+  /** 딥링크: 이동 체크 탭에서 자동 펼칠 gapKey */
+  openGapKey: string | null;
 
   // Navigation
   setCurrentTab: (tab: TabName) => void;
   setSelectedDay: (index: number) => void;
+  setOpenGapKey: (key: string | null) => void;
 
   // Trip selectors
   currentTrip: () => Trip | null;
@@ -43,9 +46,11 @@ export const useTripStore = create<TripStore>()(
       currentTripId: null,
       selectedDayIndex: 0,
       reverseCalc: MOCK_REVERSE_CALC,
+      openGapKey: null,
 
       setCurrentTab: (tab) => set({ currentTab: tab }),
       setSelectedDay: (index) => set({ selectedDayIndex: index }),
+      setOpenGapKey: (key) => set({ openGapKey: key }),
 
       currentTrip: () => {
         const { trips, currentTripId } = get();

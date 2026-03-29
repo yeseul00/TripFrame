@@ -38,7 +38,7 @@ test.describe('HomeScreen — 여행 목록', () => {
   test('[HOME-06] 여행 카드 탭 → 탭 화면 진입 (일정 탭 표시)', async ({ page }) => {
     await page.getByText('후쿠오카 · 유후인').first().click();
     await expect(page.locator('text=일정').first()).toBeVisible();
-    await expect(page.locator('text=공백감지').first()).toBeVisible();
+    await expect(page.locator('text=이동 체크').first()).toBeVisible();
   });
 
   test('[HOME-07] 탭 진입 후 "← 홈" 버튼이 표시된다', async ({ page }) => {
@@ -63,9 +63,9 @@ test.describe('HomeScreen — 여행 진입 후 탭 네비게이션', () => {
     await expect(page.getByText('후쿠오카 · 유후인')).toBeVisible();
   });
 
-  test('[HOME-10] 탭 진입 후 공백감지 탭으로 이동 가능하다', async ({ page }) => {
-    await page.locator('text=공백감지').first().click();
-    // 공통 헤더에 탭 이름 표시 (공백감지, 공백 없음)
-    await expect(page.getByText('공백감지').first()).toBeVisible();
+  test('[HOME-10] 탭 진입 후 이동 체크 탭으로 이동 가능하다', async ({ page }) => {
+    await page.locator('text=이동 체크').first().click();
+    // 공통 헤더에 탭 이름 표시 (이동 체크, 공백 없음)
+    await expect(page.getByText('이동 체크').first()).toBeVisible();
   });
 });

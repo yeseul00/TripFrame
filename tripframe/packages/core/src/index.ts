@@ -12,3 +12,4 @@ export * from './logic/alternativeCalc';
 export * from './logic/applySettings';
 export * from './logic/sortOptions';
 export * from './data/transport-rules';
+export * from './logic/exportIcal';

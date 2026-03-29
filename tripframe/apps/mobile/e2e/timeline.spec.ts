@@ -82,10 +82,10 @@ test.describe('SCR-001 일정 탭', () => {
 
   // ── 하단 탭바 ───────────────────────────────────────────────────────────
 
-  test('[SCR-001-07] 하단 탭바 4개 탭 표시 (일정, 공백감지, 제안카드, 역산)', async ({ page }) => {
+  test('[SCR-001-07] 하단 탭바 4개 탭 표시 (일정, 이동 체크, 역산, 설정)', async ({ page }) => {
     await expect(page.locator('text=일정').first()).toBeVisible();
-    await expect(page.locator('text=공백감지').first()).toBeVisible();
-    await expect(page.locator('text=제안카드').first()).toBeVisible();
+    await expect(page.locator('text=이동 체크').first()).toBeVisible();
     await expect(page.locator('text=역산').first()).toBeVisible();
+    await expect(page.locator('text=설정').first()).toBeVisible();
   });
 });

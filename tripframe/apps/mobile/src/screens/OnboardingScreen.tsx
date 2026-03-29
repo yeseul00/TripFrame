@@ -4,7 +4,9 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
+  ScrollView,
   Dimensions,
+  Platform,
   type ListRenderItemInfo,
 } from 'react-native'
 import { SafeAreaView } from 'react-native'
@@ -81,6 +83,52 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           </TouchableOpacity>
         )}
       </View>
+    )
+  }
+
+  // 웹 환경: FlatList 대신 ScrollView + 명시적 배경색 적용 (B-01)
+  if (Platform.OS === 'web') {
+    const slide = SLIDES[currentIndex]
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F13' }}>
+        <View style={{ alignItems: 'flex-end', paddingHorizontal: 16, paddingTop: 16 }}>
+          <TouchableOpacity onPress={complete}>
+            <Text style={{ color: '#6B7280', fontSize: 14 }}>건너뛰기</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 48 }}>
+            <Text style={{ fontSize: 64, marginBottom: 32 }}>{slide.icon}</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 }}>{slide.title}</Text>
+            <Text style={{ color: '#9CA3AF', fontSize: 16, textAlign: 'center', lineHeight: 24 }}>{slide.subtitle}</Text>
+            {slide.cta && (
+              <TouchableOpacity
+                onPress={complete}
+                style={{ marginTop: 40, backgroundColor: '#A78BFA', borderRadius: 999, paddingHorizontal: 40, paddingVertical: 16 }}
+              >
+                <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>{slide.cta}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </ScrollView>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 32, paddingBottom: 40 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {SLIDES.map((_, i) => (
+              <View key={i} style={{
+                borderRadius: 999,
+                width: i === currentIndex ? 20 : 8,
+                height: 8,
+                backgroundColor: i === currentIndex ? '#A78BFA' : '#4B5563',
+              }} />
+            ))}
+          </View>
+          {currentIndex < SLIDES.length - 1 && (
+            <TouchableOpacity onPress={goNext} style={{ borderWidth: 1, borderColor: '#374151', borderRadius: 999, paddingHorizontal: 24, paddingVertical: 8, backgroundColor: '#1F2937' }}>
+              <Text style={{ color: '#FFFFFF' }}>다음</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </SafeAreaView>
     )
   }
 

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, ActionSheetIOS, Platform, Alert } from 'react-native';
 import { useTripStore } from '../store/useTripStore';
 import { TripFormModal } from './TripFormModal';
+import { IcalExportModal } from '../components/IcalExportModal';
 import type { Trip } from '@tripframe/core';
 
 interface HomeScreenProps {
@@ -12,9 +13,10 @@ interface TripCardProps {
   trip: Trip;
   onPress: () => void;
   onEdit: () => void;
+  onExport: () => void;
 }
 
-function TripCard({ trip, onPress, onEdit }: TripCardProps) {
+function TripCard({ trip, onPress, onEdit, onExport }: TripCardProps) {
   const gapCount = trip.timelines.flatMap((t) => t.gaps).length;
   const dangerCount = trip.timelines
     .flatMap((t) => t.gaps)
@@ -37,7 +39,20 @@ function TripCard({ trip, onPress, onEdit }: TripCardProps) {
         </View>
 
         <TouchableOpacity
-          onPress={onEdit}
+          onPress={() => {
+            if (Platform.OS === 'ios') {
+              ActionSheetIOS.showActionSheetWithOptions(
+                { options: ['취소', '편집', '내보내기 (.ics)'], cancelButtonIndex: 0 },
+                (idx) => { if (idx === 1) onEdit(); if (idx === 2) onExport(); },
+              );
+            } else {
+              Alert.alert('여행 옵션', undefined, [
+                { text: '편집', onPress: onEdit },
+                { text: '내보내기 (.ics)', onPress: onExport },
+                { text: '취소', style: 'cancel' },
+              ]);
+            }
+          }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           className="p-1"
         >
@@ -69,6 +84,7 @@ export function HomeScreen({ onSelectTrip }: HomeScreenProps) {
   const trips = useTripStore((state) => state.trips);
   const [showForm, setShowForm] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
+  const [exportingTrip, setExportingTrip] = useState<Trip | null>(null);
 
   // 출발일 역순 정렬 (최신 우선)
   const sortedTrips = [...trips].sort(
@@ -105,6 +121,7 @@ export function HomeScreen({ onSelectTrip }: HomeScreenProps) {
             trip={trip}
             onPress={() => onSelectTrip(trip.id)}
             onEdit={() => openEdit(trip)}
+            onExport={() => setExportingTrip(trip)}
           />
         ))}
 
@@ -122,6 +139,13 @@ export function HomeScreen({ onSelectTrip }: HomeScreenProps) {
         trip={editingTrip}
         onClose={() => setShowForm(false)}
       />
+
+      {exportingTrip && (
+        <IcalExportModal
+          trip={exportingTrip}
+          onClose={() => setExportingTrip(null)}
+        />
+      )}
     </SafeAreaView>
   );
 }

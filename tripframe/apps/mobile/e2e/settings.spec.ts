@@ -86,28 +86,28 @@ test.describe('Phase 4.1 — 교통 선호도 정렬 반영', () => {
     await selectMockTrip(page);
   });
 
-  // ── 교통 선호도 → 제안카드 정렬 ──────────────────────────────────────────
+  // ── 교통 선호도 → 이동 체크 정렬 ──────────────────────────────────────────
 
-  test('[SETTINGS-04] 기본값(무관) — 제안카드에 복수 교통수단 표시됨', async ({ page }) => {
-    await page.locator('text=제안카드').click();
+  test('[SETTINGS-04] 기본값(무관) — 이동 체크에 복수 교통수단 표시됨', async ({ page }) => {
+    await page.locator('text=이동 체크').click();
     const modeLabels = page.getByText(/대중교통|택시|렌터카/);
     await expect(modeLabels.first()).toBeVisible();
     const count = await modeLabels.count();
     expect(count).toBeGreaterThanOrEqual(2);
   });
 
-  test('[SETTINGS-05] 교통 선호: 대중교통 → 제안카드에 대중교통 옵션 상단 표시', async ({ page }) => {
+  test('[SETTINGS-05] 교통 선호: 대중교통 → 이동 체크에 대중교통 옵션 상단 표시', async ({ page }) => {
     await page.locator('text=설정').click();
     await page.getByText('대중교통').click();
-    await page.locator('text=제안카드').click();
+    await page.locator('text=이동 체크').click();
     // 대중교통 라벨이 화면에 표시됨
     await expect(page.getByText('대중교통').first()).toBeVisible();
   });
 
-  test('[SETTINGS-06] 교통 선호: 택시 → 제안카드에 택시 옵션 상단 표시', async ({ page }) => {
+  test('[SETTINGS-06] 교통 선호: 택시 → 이동 체크에 택시 옵션 상단 표시', async ({ page }) => {
     await page.locator('text=설정').click();
     await page.getByText('택시').click();
-    await page.locator('text=제안카드').click();
+    await page.locator('text=이동 체크').click();
     // 택시 옵션이 상단에 위치함 (첫 번째 모드 라벨이 택시여야 함)
     await expect(page.getByText('택시').first()).toBeVisible();
   });

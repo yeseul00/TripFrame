@@ -92,8 +92,8 @@ test.describe('SCR-004 역산 탭', () => {
 
   // ── 탭 이동 검증 ─────────────────────────────────────────────────────────
 
-  test('[SCR-004-05] 공백감지 탭으로 이동 후 역산 탭 재진입 시 결과 유지', async ({ page }) => {
-    await page.locator('text=공백감지').click();
+  test('[SCR-004-05] 이동 체크 탭으로 이동 후 역산 탭 재진입 시 결과 유지', async ({ page }) => {
+    await page.locator('text=이동 체크').click();
     await page.locator('text=역산').last().click();
     await expect(page.getByText('09:20')).toBeVisible(); // DB 조회 기반 70분 버스
   });

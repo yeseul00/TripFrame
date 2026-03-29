@@ -9,14 +9,24 @@
     "updates": {
       "enabled": false
     },
+    "plugins": [
+      "expo-dev-client",
+      "expo-secure-store",
+      [
+        "expo-file-system",
+        {}
+      ]
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tripframe.app"
     },
     "android": {
-      "package": "com.tripframe.app",
-      "adaptiveIcon": {
-        "backgroundColor": "#000000"
+      "package": "com.tripframe.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "89e29799-5815-4d04-ade7-d71de851d0d2"
       }
     }
   }

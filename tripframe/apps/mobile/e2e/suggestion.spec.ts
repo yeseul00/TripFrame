@@ -1,8 +1,8 @@
 /**
- * E2E 테스트: SCR-004 — 제안카드 탭 (SuggestionScreen)
+ * E2E 테스트: SCR-004 — 이동 체크 탭 교통 옵션 (MoveCheckScreen)
  *
- * 대상 URL : http://localhost:8081
- * 검증 시나리오: US-003 이동수단 비교 Acceptance Criteria
+ * TASK-096: suggestion.spec.ts는 moveCheck.spec.ts와 통합됨.
+ * 이 파일은 교통 옵션 + 설정 탭 관련 핵심 TC만 유지.
  */
 
 import { test, expect, devices } from '@playwright/test';
@@ -11,15 +11,16 @@ import { selectMockTrip } from './helpers';
 const MOBILE = devices['Pixel 5'];
 test.use({ ...MOBILE });
 
-test.describe('SCR-004 제안카드 탭', () => {
+test.describe('SCR-004 이동 체크 탭 — 교통 옵션', () => {
   test.beforeEach(async ({ page }) => {
     await selectMockTrip(page);
-    await page.locator('text=제안카드').click();
+    await page.locator('text=이동 체크').click();
+    // 첫 Gap 카드 펼침
+    await page.getByText('DANGER').first().locator('..').locator('..').click();
   });
 
-  test('[SCR-004-01] 제안카드 탭 진입 확인', async ({ page }) => {
-    // 공통 헤더에 탭 이름 표시
-    await expect(page.getByText('제안카드').first()).toBeVisible();
+  test('[SCR-004-01] 이동 체크 탭 진입 확인', async ({ page }) => {
+    await expect(page.getByText('이동 체크').first()).toBeVisible();
   });
 
   test('[SCR-004-02] DANGER Gap 구간이 표시됨 (하카타→유후인)', async ({ page }) => {
@@ -27,7 +28,6 @@ test.describe('SCR-004 제안카드 탭', () => {
   });
 
   test('[SCR-004-03] 각 구간에 OptionCard가 1개 이상 표시됨', async ({ page }) => {
-    // 추천 배지 또는 대중교통/택시 라벨 존재 확인
     const cards = page.getByText(/대중교통|택시|렌터카/);
     await expect(cards.first()).toBeVisible();
     const count = await cards.count();
@@ -44,12 +44,10 @@ test.describe('SCR-004 제안카드 탭', () => {
 
   test('[SCR-004-06] 인원수 + 버튼 클릭 시 인원 증가', async ({ page }) => {
     await page.getByText('+').first().click();
-    // 인원수 표시 텍스트 "× 2명" 확인 (요금 라벨에 반영됨)
     await expect(page.getByText(/× 2명/).first()).toBeVisible();
   });
 
   test('[SCR-004-07] 인원 증가 시 합산 요금 변경됨', async ({ page }) => {
-    // 1인 요금 텍스트 캡처
     const priceBefore = await page.getByText(/[0-9,]+원/).first().textContent();
     await page.getByText('+').first().click();
     const priceAfter = await page.getByText(/[0-9,]+원/).first().textContent();
@@ -58,30 +56,6 @@ test.describe('SCR-004 제안카드 탭', () => {
 
   test('[SCR-004-08] 소요시간 "분" 표시 확인', async ({ page }) => {
     await expect(page.getByText(/\d+분/).first()).toBeVisible();
-  });
-
-  // ── 교통 선호도 정렬 (REQ-FR-014, TASK-074) ──────────────────────────────
-
-  test('[SCR-004-09] 설정: 대중교통 선택 시 대중교통 옵션이 첫 번째로 표시됨', async ({ page }) => {
-    // 설정 탭에서 대중교통 선택
-    await page.locator('text=설정').click();
-    await page.getByText('대중교통').click();
-    // 제안카드로 이동
-    await page.locator('text=제안카드').click();
-    // 첫 번째 옵션 카드가 대중교통 모드여야 함
-    const firstMode = page.getByText('대중교통').first();
-    await expect(firstMode).toBeVisible();
-  });
-
-  test('[SCR-004-10] 설정: 택시 선택 시 택시 옵션이 첫 번째로 표시됨', async ({ page }) => {
-    // 설정 탭에서 택시 선택
-    await page.locator('text=설정').click();
-    await page.getByText('택시').click();
-    // 제안카드로 이동
-    await page.locator('text=제안카드').click();
-    // 택시 옵션이 상단에 있어야 함
-    const taxiOption = page.getByText('택시').first();
-    await expect(taxiOption).toBeVisible();
   });
 });
 

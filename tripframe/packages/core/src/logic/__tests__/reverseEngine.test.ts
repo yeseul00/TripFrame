@@ -27,16 +27,16 @@ function makeStep(
 describe('calculateReverseTime — 핵심 시나리오', () => {
   /**
    * TC-007 (REQ-FR-004)
-   * Given: LJ263 12:15 출발, 버스 75분 + 버퍼 + 준비 포함 샘플 데이터
+   * Given: LJ263 12:15 출발, 버스 70분(DB 조회) + 버퍼 + 준비 포함 샘플 데이터
    * When : calculateReverseTime 호출
-   * Then : 09:15 반환
+   * Then : 09:20 반환 (ICN→홍대 버스 70분, 총 175분 차감)
    */
-  it('[TC-007] 샘플 역산 데이터로 집 출발 시간 09:15 계산', () => {
+  it('[TC-007] 샘플 역산 데이터로 집 출발 시간 09:20 계산', () => {
     const result = calculateReverseTime(
       MOCK_REVERSE_CALC.anchorTime,
       MOCK_REVERSE_CALC.steps,
     );
-    expect(result).toBe('09:15');
+    expect(result).toBe('09:20');
   });
 
   /**

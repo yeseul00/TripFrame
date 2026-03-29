@@ -29,7 +29,7 @@ test.describe('TripFrame MVP E2E Tests', () => {
     await page.waitForTimeout(500);
 
     // Day 1 이벤트 확인
-    await expect(page.locator('text=09:15')).toBeVisible();
+    await expect(page.locator('text=09:20')).toBeVisible(); // DB 조회: ICN→홍대 버스 70분
     await expect(page.locator('text=집 출발')).toBeVisible();
     await expect(page.locator('text=12:15')).toBeVisible();
     await expect(page.locator('text=후쿠오카행 비행기')).toBeVisible();

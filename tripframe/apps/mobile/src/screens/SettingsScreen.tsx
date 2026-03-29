@@ -1,27 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Modal } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { getUserProfile, updateUserProfile, ensureUserProfile } from '../lib/userProfile';
+import { updateUserProfile, ensureUserProfile } from '../lib/userProfile';
 import type { UserProfile } from '../lib/userProfile';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
-import type { LuggageSize, TransportPreference, TimeBuffer } from '../lib/database.types';
+import { useSettingsStore } from '../store/useSettingsStore';
+import type { LuggageSize, TransportPreference, BufferLevel } from '../store/useSettingsStore';
+import type { SyncStatus } from '../hooks/useRealtimeSync';
 
 type OptionItem<T extends string> = { label: string; value: T; desc: string };
 
 const LUGGAGE_OPTIONS: OptionItem<LuggageSize>[] = [
-  { label: '기내용', value: 'CARRY_ON', desc: '수하물 찾기 시간 없음' },
-  { label: '위탁용', value: 'LARGE', desc: '수하물 수취 20~30분 추가' },
+  { label: '기내용', value: 'carry-on', desc: '수하물 찾기 시간 없음' },
+  { label: '위탁용', value: 'checked', desc: '수하물 수취 20~30분 추가' },
 ];
 
 const TRANSPORT_OPTIONS: OptionItem<TransportPreference>[] = [
-  { label: '대중교통', value: 'PUBLIC', desc: '지하철·버스 우선 추천' },
-  { label: '택시', value: 'TAXI', desc: '빠르고 편한 이동 우선' },
-  { label: '무관', value: 'ANY', desc: '가장 빠른 옵션 추천' },
+  { label: '대중교통', value: 'transit', desc: '지하철·버스 우선 추천' },
+  { label: '택시', value: 'taxi', desc: '빠르고 편한 이동 우선' },
+  { label: '무관', value: 'any', desc: '가장 빠른 옵션 추천' },
 ];
 
-const BUFFER_OPTIONS: OptionItem<TimeBuffer>[] = [
-  { label: '빡빡하게', value: 'TIGHT', desc: '최소 여유시간으로 계산' },
-  { label: '여유있게', value: 'RELAXED', desc: '넉넉한 버퍼 포함' },
+const BUFFER_OPTIONS: OptionItem<BufferLevel>[] = [
+  { label: '빡빡하게', value: 'tight', desc: '최소 여유시간으로 계산' },
+  { label: '기본', value: 'normal', desc: '기본 여유시간 (기본값)' },
+  { label: '여유있게', value: 'relaxed', desc: '넉넉한 버퍼 포함' },
 ];
 
 function OptionGroup<T extends string>({
@@ -66,11 +69,15 @@ function OptionGroup<T extends string>({
   );
 }
 
-export function SettingsScreen() {
+interface SettingsScreenProps {
+  syncStatus?: SyncStatus;
+}
+
+export function SettingsScreen({ syncStatus = 'idle' }: SettingsScreenProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const { promptAsync, isReady } = useGoogleAuth();
+  const { settings, updateSettings } = useSettingsStore();
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -82,17 +89,6 @@ export function SettingsScreen() {
       }
     });
   }, []);
-
-  async function handleChange<T extends string>(
-    field: keyof Pick<UserProfile, 'luggage_size' | 'transport_preference' | 'time_buffer'>,
-    value: T,
-  ) {
-    if (!userId || !profile) return;
-    setProfile((prev) => prev ? { ...prev, [field]: value } : prev);
-    setSaving(true);
-    await updateUserProfile(userId, { [field]: value });
-    setSaving(false);
-  }
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -111,7 +107,9 @@ export function SettingsScreen() {
               <Text className="text-white font-medium">
                 {profile?.display_name ?? '로그인됨'}
               </Text>
-              <Text className="text-muted text-xs mt-0.5">클라우드 동기화 활성화됨</Text>
+              <Text className={`text-xs mt-0.5 ${syncStatus === 'offline' ? 'text-warning' : 'text-muted'}`}>
+                {syncStatus === 'connected' ? '✓ 동기화 완료' : syncStatus === 'offline' ? '⚠ 오프라인 모드' : '클라우드 동기화 활성화됨'}
+              </Text>
             </View>
             <TouchableOpacity onPress={handleSignOut} className="px-3 py-1.5 rounded-lg bg-gray-800">
               <Text className="text-muted text-sm">로그아웃</Text>
@@ -137,37 +135,27 @@ export function SettingsScreen() {
         )}
       </View>
 
-      {/* 선호도 설정 (로그인 시에만 저장됨) */}
-      {saving && (
-        <Text className="text-primary text-xs mb-4">저장 중...</Text>
-      )}
-
+      {/* 선호도 설정 — useSettingsStore (offline-first, encryptedStorage) */}
       <OptionGroup
         title="짐 크기"
         options={LUGGAGE_OPTIONS}
-        value={profile?.luggage_size ?? 'CARRY_ON'}
-        onChange={(v) => handleChange('luggage_size', v)}
+        value={settings.luggageSize}
+        onChange={(v) => updateSettings({ luggageSize: v })}
       />
 
       <OptionGroup
         title="교통 선호"
         options={TRANSPORT_OPTIONS}
-        value={profile?.transport_preference ?? 'ANY'}
-        onChange={(v) => handleChange('transport_preference', v)}
+        value={settings.transportPreference}
+        onChange={(v) => updateSettings({ transportPreference: v })}
       />
 
       <OptionGroup
         title="여유도"
         options={BUFFER_OPTIONS}
-        value={profile?.time_buffer ?? 'RELAXED'}
-        onChange={(v) => handleChange('time_buffer', v)}
+        value={settings.bufferLevel}
+        onChange={(v) => updateSettings({ bufferLevel: v })}
       />
-
-      {!userId && (
-        <Text className="text-muted text-xs text-center mt-4">
-          로그인하면 설정이 클라우드에 저장됩니다
-        </Text>
-      )}
 
       {/* 피드백 */}
       <FeedbackSection userId={userId} />

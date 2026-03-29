@@ -23,7 +23,7 @@ export interface TripEvent {
   status: EventStatus;
   location?: string;
   isDerived?: boolean; // 역산에 의해 생성된 이벤트인지 여부
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export type GapSeverity = 'DANGER' | 'WARNING' | 'OK';
@@ -65,4 +65,12 @@ export interface Trip {
   startDate: string;
   endDate: string;
   timelines: DayTimeline[];
+}
+
+export interface FreeTimeResult {
+  minutes: number;
+  startTime: string;  // "HH:mm" 형식
+  endTime: string;    // "HH:mm" 형식
+  warning?: string;   // 30분 미만 시 경고 메시지
+  suggestion?: string; // 자유시간 활용 제안
 }

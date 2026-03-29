@@ -41,11 +41,11 @@ test.describe('SCR-001 일정 탭', () => {
 
   // ── TC-007: 역산 배지 ────────────────────────────────────────────────────
 
-  test('[TC-007] Day 1 — 09:15 집 출발에 역산 배지 표시', async ({ page }) => {
+  test('[TC-007] Day 1 — 09:20 집 출발에 역산 배지 표시', async ({ page }) => {
     await page.getByText('Day 1').click();
 
-    // 09:15 이벤트 카드 확인
-    await expect(page.getByText('09:15')).toBeVisible();
+    // 09:20 이벤트 카드 확인 (ICN→홍대 버스 70분 DB 조회)
+    await expect(page.getByText('09:20')).toBeVisible();
     await expect(page.getByText('집 출발')).toBeVisible();
     await expect(page.getByText('역산').first()).toBeVisible();
   });

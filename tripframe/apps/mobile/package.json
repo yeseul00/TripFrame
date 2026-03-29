@@ -10,10 +10,13 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^3.0.2",
+    "@react-native-community/datetimepicker": "^9.1.0",
     "@supabase/supabase-js": "^2.100.1",
     "@tripframe/core": "workspace:*",
     "expo": "~54.0.0",
     "expo-auth-session": "55.0.11-canary-20260327-0789fbc",
+    "expo-crypto": "~15.0.8",
+    "expo-sqlite": "~16.0.10",
     "expo-status-bar": "^55.0.4",
     "expo-web-browser": "55.0.11-canary-20260327-0789fbc",
     "nativewind": "^4.2.3",

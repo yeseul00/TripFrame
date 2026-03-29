@@ -1,18 +1,23 @@
 import { Trip, TripEvent, DayTimeline, ReverseCalcResult } from '../types/trip';
+import { getTransportRoute } from './transport-rules';
 
 /**
  * 후쿠오카-유후인 샘플 여행 데이터 (MVP)
  */
 
+// ICN ↔ 홍대 공항버스 소요시간 (DB 조회, fallback: 70분)
+const _icnHongdae = getTransportRoute('ICN', 'HONGDAE');
+const ICN_HONGDAE_MIN = _icnHongdae?.durationMin ?? 70;
+
 export const MOCK_REVERSE_CALC: ReverseCalcResult = {
   anchorTime: '12:15',
   steps: [
     { id: '1', label: '공항 체크인', durationMinutes: 50, type: 'checkin' },
-    { id: '2', label: '공항 이동 버스', durationMinutes: 75, type: 'transport' },
+    { id: '2', label: '공항 이동 버스', durationMinutes: ICN_HONGDAE_MIN, type: 'transport' },
     { id: '3', label: '집에서 버스정류장 여유', durationMinutes: 40, type: 'buffer' },
     { id: '4', label: '외출 준비', durationMinutes: 15, type: 'prep' },
   ],
-  calculatedTime: '09:15', // 엔진에서 계산할 예상값
+  calculatedTime: '09:20', // 엔진에서 계산할 예상값 (ICN_HONGDAE_MIN=70기준)
 };
 
 export const MOCK_TRIP: Trip = {
@@ -28,7 +33,7 @@ export const MOCK_TRIP: Trip = {
         {
           id: 'e1-1',
           title: '집 출발',
-          time: '09:15',
+          time: '09:20', // DB 조회: ICN→홍대 버스 70분 기준
           type: 'home',
           status: 'ok',
           isDerived: true,

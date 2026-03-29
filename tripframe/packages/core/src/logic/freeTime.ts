@@ -3,13 +3,8 @@
  * REQ-FR-011~013: 도착~체크인 사이 자유시간 분석
  */
 
-export interface FreeTimeResult {
-  minutes: number;
-  startTime: string;  // "HH:mm" 형식
-  endTime: string;    // "HH:mm" 형식
-  warning?: string;   // 30분 미만 시 경고 메시지
-  suggestion?: string; // 자유시간 활용 제안
-}
+import type { FreeTimeResult } from '../types/trip';
+export type { FreeTimeResult };
 
 /**
  * "HH:mm" 형식 시간을 Date 객체로 변환

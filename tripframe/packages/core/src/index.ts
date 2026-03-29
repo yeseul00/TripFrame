@@ -9,3 +9,6 @@ export * from './types/transport';
 export * from './data/mockTransport';
 export * from './logic/rankOptions';
 export * from './logic/alternativeCalc';
+export * from './logic/applySettings';
+export * from './logic/sortOptions';
+export * from './data/transport-rules';

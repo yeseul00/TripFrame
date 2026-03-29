@@ -1,9 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-export function useRealtimeSync(userId: string | null) {
+export type SyncStatus = 'idle' | 'connected' | 'offline';
+
+export function useRealtimeSync(userId: string | null): SyncStatus {
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setSyncStatus('idle');
+      return;
+    }
 
     const channel = supabase
       .channel(`user-${userId}`)
@@ -33,10 +40,14 @@ export function useRealtimeSync(userId: string | null) {
       )
       .subscribe((status) => {
         console.log('[Realtime] 구독 상태:', status);
+        if (status === 'SUBSCRIBED') setSyncStatus('connected');
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setSyncStatus('offline');
       });
 
     return () => {
       channel.unsubscribe();
     };
   }, [userId]);
+
+  return syncStatus;
 }

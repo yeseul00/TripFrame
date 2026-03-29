@@ -7,7 +7,7 @@ describe('TripFrame Core Engines', () => {
   describe('Reverse Calculation Engine', () => {
     it('비행기 출발 시간으로부터 모든 단계를 차감하여 정확한 출발 시간을 계산해야 한다', () => {
       const result = calculateReverseTime(MOCK_REVERSE_CALC.anchorTime, MOCK_REVERSE_CALC.steps);
-      expect(result).toBe('09:15');
+      expect(result).toBe('09:20'); // ICN→홍대 버스 70분(DB 조회) 기준
     });
 
     it('단계가 없을 경우 앵커 시간을 그대로 반환해야 한다', () => {

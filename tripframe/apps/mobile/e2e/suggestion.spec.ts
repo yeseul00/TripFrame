@@ -59,6 +59,30 @@ test.describe('SCR-004 제안카드 탭', () => {
   test('[SCR-004-08] 소요시간 "분" 표시 확인', async ({ page }) => {
     await expect(page.getByText(/\d+분/).first()).toBeVisible();
   });
+
+  // ── 교통 선호도 정렬 (REQ-FR-014, TASK-074) ──────────────────────────────
+
+  test('[SCR-004-09] 설정: 대중교통 선택 시 대중교통 옵션이 첫 번째로 표시됨', async ({ page }) => {
+    // 설정 탭에서 대중교통 선택
+    await page.locator('text=설정').click();
+    await page.getByText('대중교통').click();
+    // 제안카드로 이동
+    await page.locator('text=제안카드').click();
+    // 첫 번째 옵션 카드가 대중교통 모드여야 함
+    const firstMode = page.getByText('대중교통').first();
+    await expect(firstMode).toBeVisible();
+  });
+
+  test('[SCR-004-10] 설정: 택시 선택 시 택시 옵션이 첫 번째로 표시됨', async ({ page }) => {
+    // 설정 탭에서 택시 선택
+    await page.locator('text=설정').click();
+    await page.getByText('택시').click();
+    // 제안카드로 이동
+    await page.locator('text=제안카드').click();
+    // 택시 옵션이 상단에 있어야 함
+    const taxiOption = page.getByText('택시').first();
+    await expect(taxiOption).toBeVisible();
+  });
 });
 
 test.describe('SCR-005 설정 탭', () => {

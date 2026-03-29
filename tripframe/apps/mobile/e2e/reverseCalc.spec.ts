@@ -44,11 +44,11 @@ test.describe('SCR-004 역산 탭', () => {
     await expect(page.getByText('12:15')).toBeVisible();
   });
 
-  // ── TC-007, TC-008: 역산 결과 09:15 ────────────────────────────────────
+  // ── TC-007, TC-008: 역산 결과 09:20 (ICN→홍대 버스 70분 DB 조회) ──────────
 
-  test('[TC-007] 권장 집 출발 시각 09:15 표시', async ({ page }) => {
+  test('[TC-007] 권장 집 출발 시각 09:20 표시', async ({ page }) => {
     await expect(page.getByText('권장 집 출발 시각')).toBeVisible();
-    await expect(page.getByText('09:15')).toBeVisible();
+    await expect(page.getByText('09:20')).toBeVisible();
   });
 
   // ── TC-008: 단계별 역산 ───────────────────────────────────────────────────
@@ -71,8 +71,9 @@ test.describe('SCR-004 역산 탭', () => {
 
   // ── TC-008: 총 소요시간 (REQ-FR-005) ─────────────────────────────────────
 
-  test('[TC-008-E] 총 소요시간 180분 전 출발 표시', async ({ page }) => {
-    await expect(page.getByText(/180분 전 출발/)).toBeVisible();
+  test('[TC-008-E] 총 소요시간 175분 전 출발 표시', async ({ page }) => {
+    // 50(체크인)+70(버스 DB조회)+40(버퍼)+15(준비) = 175분
+    await expect(page.getByText(/175분 전 출발/)).toBeVisible();
   });
 
   // ── 단계별 소요시간 브레이크다운 ─────────────────────────────────────────
@@ -85,8 +86,8 @@ test.describe('SCR-004 역산 탭', () => {
     await expect(page.getByText('50분', { exact: true })).toBeVisible();
   });
 
-  test('[TC-008-H] 브레이크다운에 "75분" (버스 이동) 표시', async ({ page }) => {
-    await expect(page.getByText('75분', { exact: true })).toBeVisible();
+  test('[TC-008-H] 브레이크다운에 "70분" (버스 이동 DB 조회) 표시', async ({ page }) => {
+    await expect(page.getByText('70분', { exact: true })).toBeVisible();
   });
 
   // ── 탭 이동 검증 ─────────────────────────────────────────────────────────
@@ -94,7 +95,7 @@ test.describe('SCR-004 역산 탭', () => {
   test('[SCR-004-05] 공백감지 탭으로 이동 후 역산 탭 재진입 시 결과 유지', async ({ page }) => {
     await page.locator('text=공백감지').click();
     await page.locator('text=역산').last().click();
-    await expect(page.getByText('09:15')).toBeVisible();
+    await expect(page.getByText('09:20')).toBeVisible(); // DB 조회 기반 70분 버스
   });
 
   // ── Phase 3.5: Day 선택 탭 ──────────────────────────────────────────────

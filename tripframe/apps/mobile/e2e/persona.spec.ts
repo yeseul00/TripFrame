@@ -59,7 +59,7 @@ test.describe('P3 — 빡빡한 비즈니스 여행자 (역산 + 제안카드)',
   test('[P3-01] 역산 화면에서 출발 시각이 표시됨', async ({ page }) => {
     await selectMockTrip(page);
     await page.locator('text=역산').first().click();
-    await expect(page.getByText('09:15')).toBeVisible();
+    await expect(page.getByText('09:20')).toBeVisible(); // ICN→홍대 버스 70분(DB 조회)
   });
 
   test('[P3-02] 제안카드에서 90분 이내 옵션 존재 (택시 90분)', async ({ page }) => {

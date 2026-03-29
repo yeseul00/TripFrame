@@ -6,9 +6,82 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTripStore } from '../store/useTripStore';
 import type { Trip } from '@tripframe/core';
+
+// ─── 날짜 헬퍼 ────────────────────────────────────────────────────
+
+function formatDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}.${m}.${d}`;
+}
+
+function parseDate(str: string): Date | null {
+  // "YYYY.MM.DD" 또는 "YYYY-MM-DD" 형식 지원
+  const normalized = str.replace(/\./g, '-');
+  const date = new Date(normalized);
+  return isNaN(date.getTime()) ? null : date;
+}
+
+// ─── 플랫폼 분기 날짜 입력 ────────────────────────────────────────
+
+interface DateInputProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}
+
+function DateInput({ label, value, onChange }: DateInputProps) {
+  const [showPicker, setShowPicker] = useState(false);
+  const parsed = parseDate(value);
+  const dateValue = parsed ?? new Date();
+
+  if (Platform.OS === 'web') {
+    return (
+      <View className="mb-5">
+        <Text className="text-muted text-xs mb-1.5">{label}</Text>
+        <TextInput
+          value={value}
+          onChangeText={onChange}
+          placeholder="예: 2026.06.18"
+          placeholderTextColor="#6B7280"
+          inputMode="numeric"
+          className="bg-card border border-gray-700 rounded-xl px-4 py-3 text-white text-sm"
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View className="mb-5">
+      <Text className="text-muted text-xs mb-1.5">{label}</Text>
+      <TouchableOpacity
+        onPress={() => setShowPicker(true)}
+        className="bg-card border border-gray-700 rounded-xl px-4 py-3"
+      >
+        <Text className={value ? 'text-white text-sm' : 'text-gray-500 text-sm'}>
+          {value || '날짜 선택'}
+        </Text>
+      </TouchableOpacity>
+      {showPicker && (
+        <DateTimePicker
+          value={dateValue}
+          mode="date"
+          display="spinner"
+          onChange={(_event, selected) => {
+            setShowPicker(false);
+            if (selected) onChange(formatDate(selected));
+          }}
+        />
+      )}
+    </View>
+  );
+}
 
 interface TripFormModalProps {
   visible: boolean;
@@ -52,6 +125,7 @@ export function TripFormModal({ visible, trip, onClose }: TripFormModalProps) {
     endDate: '',
   });
   const [titleError, setTitleError] = useState('');
+  const [dateError, setDateError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   useEffect(() => {
@@ -63,6 +137,7 @@ export function TripFormModal({ visible, trip, onClose }: TripFormModalProps) {
         endDate: trip?.endDate ?? '',
       });
       setTitleError('');
+      setDateError('');
       setDeleteConfirm(false);
     }
   }, [visible, trip]);
@@ -72,6 +147,14 @@ export function TripFormModal({ visible, trip, onClose }: TripFormModalProps) {
       setTitleError('여행명을 입력해 주세요.');
       return;
     }
+    // 귀국일 < 출발일 검사
+    const start = parseDate(form.startDate);
+    const end = parseDate(form.endDate);
+    if (start && end && end < start) {
+      setDateError('귀국일은 출발일 이후여야 합니다.');
+      return;
+    }
+    setDateError('');
 
     if (isEditMode && trip) {
       updateTrip(trip.id, {
@@ -154,28 +237,27 @@ export function TripFormModal({ visible, trip, onClose }: TripFormModalProps) {
           </View>
 
           {/* 출발일 */}
-          <View className="mb-5">
-            <Text className="text-muted text-xs mb-1.5">출발일</Text>
-            <TextInput
-              value={form.startDate}
-              onChangeText={(v) => setForm((f) => ({ ...f, startDate: v }))}
-              placeholder="예: 2026.06.18"
-              placeholderTextColor="#6B7280"
-              className="bg-card border border-gray-700 rounded-xl px-4 py-3 text-white text-sm"
-            />
-          </View>
+          <DateInput
+            label="출발일"
+            value={form.startDate}
+            onChange={(v) => {
+              setForm((f) => ({ ...f, startDate: v }));
+              setDateError('');
+            }}
+          />
 
           {/* 귀국일 */}
-          <View className="mb-5">
-            <Text className="text-muted text-xs mb-1.5">귀국일</Text>
-            <TextInput
-              value={form.endDate}
-              onChangeText={(v) => setForm((f) => ({ ...f, endDate: v }))}
-              placeholder="예: 2026.06.20"
-              placeholderTextColor="#6B7280"
-              className="bg-card border border-gray-700 rounded-xl px-4 py-3 text-white text-sm"
-            />
-          </View>
+          <DateInput
+            label="귀국일"
+            value={form.endDate}
+            onChange={(v) => {
+              setForm((f) => ({ ...f, endDate: v }));
+              setDateError('');
+            }}
+          />
+          {!!dateError && (
+            <Text className="text-danger text-xs -mt-3 mb-4">{dateError}</Text>
+          )}
 
           {/* 삭제 버튼 (수정 모드만) */}
           {isEditMode && !deleteConfirm && (

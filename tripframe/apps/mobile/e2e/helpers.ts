@@ -7,10 +7,10 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:8082';
  * 앱 진입 후 HomeScreen → Mock 여행 선택 → 탭 화면 진입까지 처리
  */
 
-/** localStorage를 초기화하고 홈 화면으로 이동 */
+/** localStorage를 초기화하고 홈 화면으로 이동 (?e2e=1 → 온보딩 스킵) */
 export async function gotoHome(page: Page) {
-  // 앱 origin에서 localStorage를 지워야 하므로 먼저 페이지를 로드한 후 초기화 후 재로드
-  await page.goto(BASE_URL);
+  // ?e2e=1 파라미터로 온보딩 화면을 건너뜀 (App.tsx 처리)
+  await page.goto(`${BASE_URL}?e2e=1`);
   await page.waitForLoadState('domcontentloaded');
   await page.evaluate(() => {
     try {
@@ -21,12 +21,11 @@ export async function gotoHome(page: Page) {
       }
     } catch {}
   });
-  await page.reload();
-  await page.waitForLoadState('domcontentloaded');
-  // React hydration + Zustand rehydration 대기
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  // React hydration + Zustand rehydration + 홈 화면 렌더링 대기
   await page.waitForFunction(
     () => document.body.textContent !== null && document.body.textContent.trim().length > 10,
-    { timeout: 8000 }
+    { timeout: 10000 }
   );
 }
 

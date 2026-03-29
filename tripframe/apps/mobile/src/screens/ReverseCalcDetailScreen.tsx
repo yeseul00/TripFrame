@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useTripStore } from '../store/useTripStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 import {
   ReverseCalcStep,
   calculateReverseTime,
   calculateFreeTime,
   recalculateWithAlternative,
+  applyBufferLevel,
 } from '@tripframe/core';
 
 const STEP_ICONS: Record<ReverseCalcStep['type'], string> = {
@@ -32,6 +34,7 @@ const ALT_TRANSPORT_OPTIONS: ReverseCalcStep[] = [
 
 export function ReverseCalcDetailScreen() {
   const { reverseCalc, currentTrip } = useTripStore();
+  const { settings } = useSettingsStore();
   const trip = currentTrip();
 
   // Day 선택 상태 (로컬)
@@ -66,7 +69,7 @@ export function ReverseCalcDetailScreen() {
 
   // Day별 역산: anchorEvent가 있으면 해당 시각으로, 없으면 store의 reverseCalc 사용
   const anchorTime = anchorEvent?.time ?? reverseCalc.anchorTime;
-  const steps = reverseCalc.steps;
+  const steps = applyBufferLevel(reverseCalc.steps, settings.bufferLevel);
   const calculatedTime = calculateReverseTime(anchorTime, steps);
 
   // 자유 시간 계산 (해당 Day에 항공편 도착 + 호텔 체크인이 모두 있는 경우)

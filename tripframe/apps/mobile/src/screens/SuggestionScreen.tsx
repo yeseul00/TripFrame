@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { useTripStore } from '../store/useTripStore';
-import { getMockTransportOptions, rankOptions } from '@tripframe/core';
+import { useSettingsStore } from '../store/useSettingsStore';
+import { getMockTransportOptions, rankOptions, sortByPreference } from '@tripframe/core';
 import type { UserPreferences, Gap } from '@tripframe/core';
+import type { TransportPreference } from '../store/useSettingsStore';
 import { OptionCard } from '../components/OptionCard';
 
 // Android에서 LayoutAnimation 활성화
@@ -50,6 +52,7 @@ interface GapSectionProps {
   isExpanded: boolean;
   onToggle: () => void;
   personCount: number;
+  transportPreference: TransportPreference;
 }
 
 function GapSection({
@@ -59,10 +62,11 @@ function GapSection({
   isExpanded,
   onToggle,
   personCount,
+  transportPreference,
 }: GapSectionProps) {
   const isDanger = gap.severity === 'DANGER';
   const options = getMockTransportOptions(gap.id);
-  const ranked = rankOptions(options, DEFAULT_PREFS);
+  const ranked = sortByPreference(rankOptions(options, DEFAULT_PREFS), transportPreference);
 
   return (
     <View className="mb-4 rounded-xl border border-gray-800 overflow-hidden">
@@ -112,6 +116,7 @@ function GapSection({
 
 export function SuggestionScreen() {
   const { allGaps, currentTrip } = useTripStore();
+  const { settings } = useSettingsStore();
   const trip = currentTrip();
   const [personCount, setPersonCount] = useState(1);
 
@@ -179,6 +184,7 @@ export function SuggestionScreen() {
             isExpanded={expandedIds.has(gap.id)}
             onToggle={() => toggleGap(gap.id)}
             personCount={personCount}
+            transportPreference={settings.transportPreference}
           />
         ))}
         <View className="h-8" />

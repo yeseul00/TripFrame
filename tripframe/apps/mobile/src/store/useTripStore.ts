@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { encryptedStorage } from '../storage/encryptedStorage';
 import { Trip, DayTimeline, TripEvent } from '@tripframe/core';
 import { MOCK_TRIP, MOCK_REVERSE_CALC } from '@tripframe/core';
 import type { ReverseCalcResult } from '@tripframe/core';
@@ -134,7 +134,7 @@ export const useTripStore = create<TripStore>()(
     }),
     {
       name: 'tripframe-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => encryptedStorage),
       partialize: (state) => ({
         trips: state.trips,
         currentTripId: state.currentTripId,

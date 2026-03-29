@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useTripStore } from '../store/useTripStore';
-import { Gap } from '@tripframe/core';
+import { calculateFreeTime } from '@tripframe/core';
+import type { Gap, FreeTimeResult } from '@tripframe/core';
 
 function GapCard({ gap }: { gap: Gap }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,13 +41,45 @@ function GapCard({ gap }: { gap: Gap }) {
   );
 }
 
+function FreeTimeCard({ result }: { result: FreeTimeResult }) {
+  const isWarning = result.minutes < 30;
+  return (
+    <View className={`mt-2 mb-3 p-4 rounded-xl border ${isWarning ? 'border-amber-500/50 bg-amber-950/20' : 'border-gray-700 bg-card'}`}>
+      <View className="flex-row items-center gap-2 mb-2">
+        <Text className="text-base">⏳</Text>
+        <Text className="text-white text-sm font-semibold">여유 시간</Text>
+        <Text className={`text-xs font-bold ml-auto ${isWarning ? 'text-amber-400' : 'text-success'}`}>
+          {result.minutes}분
+        </Text>
+      </View>
+      <Text className="text-muted text-xs">
+        {result.startTime} ~ {result.endTime}
+      </Text>
+      {(result.warning ?? result.suggestion) && (
+        <Text className={`text-xs mt-2 ${isWarning ? 'text-amber-400' : 'text-gray-400'}`}>
+          {result.warning ?? result.suggestion}
+        </Text>
+      )}
+    </View>
+  );
+}
+
 export function GapAnalysisScreen() {
-  const { allGaps, currentTrip } = useTripStore();
+  const { allGaps, currentTrip, selectedDayIndex } = useTripStore();
   const trip = currentTrip();
   const gaps = allGaps();
   const dangerCount = gaps.filter((g) => g.severity === 'DANGER').length;
 
   if (!trip) return null;
+
+  // 선택된 Day에서 도착 이벤트 + 호텔 체크인으로 여유 시간 계산
+  const timeline = trip.timelines[selectedDayIndex];
+  const arrivalEvent = timeline?.events.find((e) => e.type === 'flight' && e.location);
+  const hotelEvent = timeline?.events.find((e) => e.type === 'hotel');
+  const freeTime =
+    arrivalEvent && hotelEvent
+      ? calculateFreeTime(arrivalEvent.time, hotelEvent.time)
+      : null;
 
   return (
     <View className="flex-1 bg-background">
@@ -75,7 +108,7 @@ export function GapAnalysisScreen() {
         </View>
       </View>
 
-      {/* Gap list */}
+      {/* Gap list + FreeTime 카드 */}
       <ScrollView className="flex-1 px-4">
         {gaps.length === 0 ? (
           <View className="items-center py-16">
@@ -86,6 +119,10 @@ export function GapAnalysisScreen() {
         ) : (
           gaps.map((gap) => <GapCard key={gap.id} gap={gap} />)
         )}
+
+        {/* 여유 시간 카드 (도착→체크인 구간이 있는 경우) */}
+        {freeTime !== null && <FreeTimeCard result={freeTime} />}
+
         <View className="h-8" />
       </ScrollView>
     </View>

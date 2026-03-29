@@ -205,7 +205,15 @@ cd tripframe && pnpm install
 | E2E 탭 구조 변경 반영 | ✅ 97+ 테스트 |
 | Notion DB 등록 | ⏳ 사용자 실행 필요 |
 
-**Alpha 배포 준비도: 코드 100% 완료 / 빌드+배포는 사용자 실행 필요**
+**Alpha 배포 준비도: Dev Build APK 설치 완료 / Metro 연결 진행 중**
+
+### EAS 빌드 이슈 및 해결 기록
+
+| 빌드 | 결과 | 원인 | 해결 |
+|------|------|------|------|
+| 1차 (`821b20bb`) | ❌ | `adaptiveIcon.foregroundImage` 누락, `plugins` 미설정 | app.json 수정 |
+| 2차 (`b1db6771`) | ❌ | `async-storage ^3.0.2` → `org.asyncstorage.shared_storage:storage-android:1.0.0` Maven 미등록 | `~2.2.0` 다운그레이드 |
+| 3차 | ✅ | — | APK 설치 성공 |
 
 ---
 

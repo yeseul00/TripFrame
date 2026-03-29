@@ -130,7 +130,7 @@
 - [x] `report/260329/phase5/E2E_TEST_REPORT.md` 생성 (Playwright MCP 화면 검증 포함)
 - [x] `report/260329/phase5/PHASE5_완료보고서.md` 생성
 - [ ] Alpha 내부 배포 체크리스트:
-  - [ ] Dev Build APK Android 실기기 설치 성공 *(EAS CLI 설치 후 사용자 실행)*
+  - [x] Dev Build APK Android 실기기 설치 성공 *(3차 빌드 성공, APK 설치 완료)*
   - [x] expo-secure-store 마이그레이션 완료 (데이터 손실 없음)
   - [x] 이동 체크 탭: Gap 확인 → 교통 옵션 → 예약 완료 단일 흐름
   - [x] RESOLVED 상태 앱 재시작 후 복원

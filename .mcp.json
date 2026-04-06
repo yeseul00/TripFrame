@@ -2,7 +2,7 @@
   "mcpServers": {
     "playwright": {
       "command": "node",
-      "args": ["C:\\Users\\qptlf\\AppData\\Roaming\\npm\\node_modules\\@playwright\\mcp\\cli.js"]
+      "args": ["C:\\Users\\SOL\\AppData\\Roaming\\npm\\node_modules\\@playwright\\mcp\\cli.js"]
     }
   }
 }

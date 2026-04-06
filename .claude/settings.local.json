@@ -60,5 +60,9 @@
       "mcp__claude_ai_Notion__notion-update-data-source",
       "Bash(git status:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "playwright"
+  ],
+  "enableAllProjectMcpServers": true
 }

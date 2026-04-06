@@ -37,6 +37,7 @@ export default function App() {
       typeof window !== 'undefined' &&
       window.location?.search?.includes('e2e=1');
     if (isE2E) {
+      setKeyMigrating(false);
       setOnboardingDone(true);
       return;
     }

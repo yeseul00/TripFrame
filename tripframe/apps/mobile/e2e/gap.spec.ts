@@ -54,12 +54,16 @@ test.describe('SCR-002 이동 체크 탭 — Gap 감지', () => {
   // ── TC-014: GapCard 펼침 → 교통 옵션 인라인 (REQ-FR-009) ────────────────
 
   test('[TC-014] DANGER Gap 카드 탭 시 교통 옵션 인라인 펼쳐짐', async ({ page }) => {
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
+    // 기본 펼침 상태 → 클릭으로 닫기 → 다시 클릭으로 열기 순서로 토글 동작 검증
+    const card = page.getByText('DANGER').first().locator('..').locator('..');
+    await card.click(); // 닫기
+    await expect(page.getByText(/대중교통|택시|렌터카/).first()).not.toBeVisible({ timeout: 3000 });
+    await card.click(); // 열기
     await expect(page.getByText(/대중교통|택시|렌터카/).first()).toBeVisible();
   });
 
   test('[TC-014-B] Gap 카드에 "예약 완료" 버튼 표시', async ({ page }) => {
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
+    // 기본 펼침 상태이므로 바로 확인
     await expect(page.getByText('예약 완료').first()).toBeVisible();
   });
 

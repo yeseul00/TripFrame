@@ -24,7 +24,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'cd apps/mobile && npx expo export --platform web --output-dir dist && python3 -m http.server 8082 --directory dist',
+    command: 'cd apps/mobile && npx expo export --platform web --output-dir dist && python -m http.server 8082 --directory dist',
     url: 'http://localhost:8082',
     reuseExistingServer: true,
     timeout: 180000,

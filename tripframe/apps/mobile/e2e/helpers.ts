@@ -21,7 +21,8 @@ export async function gotoHome(page: Page) {
       }
     } catch {}
   });
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  // ?e2e=1 유지하여 재이동 — reload()는 쿼리 파라미터를 제거해 온보딩이 표시됨
+  await page.goto(`${BASE_URL}?e2e=1`, { waitUntil: 'domcontentloaded' });
   // React hydration + Zustand rehydration + 홈 화면 렌더링 대기
   await page.waitForFunction(
     () => document.body.textContent !== null && document.body.textContent.trim().length > 10,

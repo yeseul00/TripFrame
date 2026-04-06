@@ -45,6 +45,8 @@ function TripCard({ trip, onPress, onEdit, onExport }: TripCardProps) {
                 { options: ['취소', '편집', '내보내기 (.ics)'], cancelButtonIndex: 0 },
                 (idx) => { if (idx === 1) onEdit(); if (idx === 2) onExport(); },
               );
+            } else if (Platform.OS === 'web') {
+              onEdit();
             } else {
               Alert.alert('여행 옵션', undefined, [
                 { text: '편집', onPress: onEdit },

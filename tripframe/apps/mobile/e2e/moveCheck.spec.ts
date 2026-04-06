@@ -63,37 +63,37 @@ test.describe('SCR-002 이동 체크 탭 — Gap 목록 (TC-009~015)', () => {
   // ── TC-014: Gap 카드 탭 → 교통 옵션 인라인 펼침 ─────────────────────────
 
   test('[TC-014] Gap 카드 탭 시 교통 옵션 인라인 펼쳐짐', async ({ page }) => {
-    // 첫 번째 Gap 카드 탭 (화살표 ▼ 영역)
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
-
-    // 교통 옵션 노출 확인
+    // 기본 펼침 상태 → 닫기 → 다시 열기 순서로 토글 동작 검증
+    const card = page.getByText('DANGER').first().locator('..').locator('..');
+    await card.click(); // 닫기
+    await expect(page.getByText(/대중교통|택시|렌터카/).first()).not.toBeVisible({ timeout: 3000 });
+    await card.click(); // 열기
     await expect(page.getByText(/대중교통|택시|렌터카/).first()).toBeVisible();
   });
 
   test('[TC-014-B] Gap 카드에 추천 배지 표시', async ({ page }) => {
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
+    // 기본 펼침 상태이므로 바로 확인
     await expect(page.getByText('추천').first()).toBeVisible();
   });
 
   test('[TC-014-C] Gap 카드에 요금(원) 표시', async ({ page }) => {
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
+    // 기본 펼침 상태이므로 바로 확인
     await expect(page.getByText(/[0-9,]+원/).first()).toBeVisible();
   });
 
   test('[TC-014-D] Gap 카드에 소요시간(분) 표시', async ({ page }) => {
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
+    // 기본 펼침 상태이므로 바로 확인
     await expect(page.getByText(/\d+분/).first()).toBeVisible();
   });
 
   // ── US-002: 예약 완료 버튼 ────────────────────────────────────────────────
 
   test('[US-002-01] Gap 카드 펼침 시 "예약 완료" 버튼 표시', async ({ page }) => {
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
+    // 기본 펼침 상태이므로 바로 확인
     await expect(page.getByText('예약 완료').first()).toBeVisible();
   });
 
   test('[US-002-02] "예약 완료" 클릭 시 RESOLVED 상태로 변경됨', async ({ page }) => {
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
     await page.getByText('예약 완료').first().click();
 
     // RESOLVED 완료 아이콘 또는 "예약 완료" 카드 표시
@@ -110,7 +110,7 @@ test.describe('SCR-002 이동 체크 탭 — 교통 옵션 필터 (SC-004)', () 
     await page.locator('text=설정').click();
     await page.getByText('대중교통').click();
     await page.locator('text=이동 체크').click();
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
+    // 이동 체크 진입 시 첫 DANGER Gap 자동 펼침 — 별도 클릭 불필요
     await expect(page.getByText('대중교통').first()).toBeVisible();
   });
 
@@ -118,7 +118,7 @@ test.describe('SCR-002 이동 체크 탭 — 교통 옵션 필터 (SC-004)', () 
     await page.locator('text=설정').click();
     await page.getByText('택시').click();
     await page.locator('text=이동 체크').click();
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
+    // 이동 체크 진입 시 첫 DANGER Gap 자동 펼침 — 별도 클릭 불필요
     await expect(page.getByText('택시').first()).toBeVisible();
   });
 
@@ -130,7 +130,7 @@ test.describe('SCR-002 이동 체크 탭 — 교통 옵션 필터 (SC-004)', () 
 
   test('[SCR-004-07] 인원 증가 시 합산 요금 변경됨', async ({ page }) => {
     await page.locator('text=이동 체크').click();
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
+    // 첫 DANGER Gap 자동 펼침 상태이므로 바로 요금 확인
     const priceBefore = await page.getByText(/[0-9,]+원/).first().textContent();
     await page.getByText('+').first().click();
     const priceAfter = await page.getByText(/[0-9,]+원/).first().textContent();

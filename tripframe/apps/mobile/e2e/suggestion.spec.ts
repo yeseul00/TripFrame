@@ -15,8 +15,8 @@ test.describe('SCR-004 이동 체크 탭 — 교통 옵션', () => {
   test.beforeEach(async ({ page }) => {
     await selectMockTrip(page);
     await page.locator('text=이동 체크').click();
-    // 첫 Gap 카드 펼침
-    await page.getByText('DANGER').first().locator('..').locator('..').click();
+    // 첫 DANGER Gap은 자동 펼침 상태로 진입 — 별도 클릭 불필요
+    await page.waitForSelector('text=DANGER', { state: 'visible', timeout: 5000 });
   });
 
   test('[SCR-004-01] 이동 체크 탭 진입 확인', async ({ page }) => {

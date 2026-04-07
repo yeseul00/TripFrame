@@ -1,0 +1,4 @@
+<resources>
+  <string name="app_name">TripFrame</string>
+  <string name="widget_tripwidget_description" translatable="false">다음 여행 D-day 카운트다운</string>
+</resources>

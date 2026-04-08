@@ -3,11 +3,13 @@
  *
  * Phase 4: expo-crypto AES-256-GCM, 마스터 키는 kv-store 저장
  * Phase 5: getMasterKeyBytes() 저장소를 expo-secure-store로 교체 (TASK-094)
+ * Phase 6: expo-crypto 의존성 제거 → @noble/ciphers 순수 JS로 교체 (ExpoCryptoAES 호환성 이슈)
  *
  * Constitution Article VIII 준수 — 평문 AsyncStorage 저장 금지
  */
 
 import { Platform } from 'react-native'
+import { gcm } from '@noble/ciphers/aes'
 import * as Crypto from 'expo-crypto'
 import { KvStore } from './native-kv'
 import { SecureStore } from './secure-store'
@@ -20,7 +22,7 @@ const IV_LENGTH = 12   // AES-GCM 권장 96-bit IV
 const KEY_LENGTH = 32  // 256-bit key
 
 // ─────────────────────────────────────────────
-// 네이티브 구현 (expo-crypto)
+// 유틸
 // ─────────────────────────────────────────────
 
 function bufferToHex(buffer: ArrayBuffer): string {
@@ -37,6 +39,10 @@ function hexToUint8Array(hex: string): Uint8Array {
   return result
 }
 
+// ─────────────────────────────────────────────
+// 마스터 키 관리 (@noble/ciphers randomBytes 사용 — 네이티브/웹 공통)
+// ─────────────────────────────────────────────
+
 /**
  * 마스터 키를 가져온다.
  * 우선순위: SecureStore → kv-store(마이그레이션) → 신규 생성
@@ -44,6 +50,15 @@ function hexToUint8Array(hex: string): Uint8Array {
  * TASK-094: getMasterKey() 저장소 1곳만 교체. 암호화 로직 변경 없음.
  */
 async function getMasterKeyBytes(): Promise<Uint8Array> {
+  if (Platform.OS === 'web') {
+    const stored = localStorage.getItem(MASTER_KEY_STORAGE_KEY)
+    if (stored) return hexToUint8Array(stored)
+    const keyBytes = new Uint8Array(KEY_LENGTH)
+    crypto.getRandomValues(keyBytes)
+    localStorage.setItem(MASTER_KEY_STORAGE_KEY, bufferToHex(keyBytes.buffer as ArrayBuffer))
+    return keyBytes
+  }
+
   // 1. SecureStore에서 키 조회 (정상 경로 + 재시작 후 경로)
   const secureKey = await SecureStore.getItemAsync(MASTER_KEY_STORAGE_KEY)
   if (secureKey) {
@@ -68,7 +83,7 @@ async function getMasterKeyBytes(): Promise<Uint8Array> {
     return hexToUint8Array(kvKey)
   }
 
-  // 3. 최초 실행 — 랜덤 256-bit 키 생성
+  // 3. 최초 실행 — 랜덤 256-bit 키 생성 (expo-crypto)
   const keyBytes = await Crypto.getRandomBytesAsync(KEY_LENGTH)
   const keyHex = bufferToHex(keyBytes.buffer as ArrayBuffer)
   try {
@@ -78,124 +93,30 @@ async function getMasterKeyBytes(): Promise<Uint8Array> {
     console.warn('[encryptedStorage] SecureStore 키 저장 실패, kv-store 폴백')
     await KvStore.setItem(MASTER_KEY_STORAGE_KEY, keyHex)
   }
-  return new Uint8Array(keyBytes)
-}
-
-function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
-}
-
-async function importAesKey(keyBytes: Uint8Array): Promise<CryptoKey> {
-  return crypto.subtle.importKey(
-    'raw',
-    toArrayBuffer(keyBytes),
-    { name: 'AES-GCM' },
-    false,
-    ['encrypt', 'decrypt'],
-  )
-}
-
-async function encryptNative(plaintext: string): Promise<string> {
-  const keyBytes = await getMasterKeyBytes()
-  const cryptoKey = await importAesKey(keyBytes)
-  const iv = await Crypto.getRandomBytesAsync(IV_LENGTH)
-  const ivBuf = toArrayBuffer(new Uint8Array(iv))
-  const encoded = new TextEncoder().encode(plaintext)
-  const cipherBuf = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: new Uint8Array(ivBuf) },
-    cryptoKey,
-    encoded,
-  )
-  const ivHex = bufferToHex(ivBuf)
-  const cipherHex = bufferToHex(cipherBuf)
-  return `${ivHex}:${cipherHex}`
-}
-
-async function decryptNative(ciphertext: string): Promise<string> {
-  const parts = ciphertext.split(':')
-  if (parts.length !== 2) throw new Error('Invalid ciphertext format')
-  const [ivHex, cipherHex] = parts
-  const keyBytes = await getMasterKeyBytes()
-  const cryptoKey = await importAesKey(keyBytes)
-  const iv = toArrayBuffer(hexToUint8Array(ivHex))
-  const cipherData = toArrayBuffer(hexToUint8Array(cipherHex))
-  const plainBuf = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
-    cryptoKey,
-    cipherData,
-  )
-  return new TextDecoder().decode(plainBuf)
-}
-
-// ─────────────────────────────────────────────
-// 웹 fallback (SubtleCrypto 직접 사용)
-// ─────────────────────────────────────────────
-
-async function getMasterKeyBytesWeb(): Promise<Uint8Array> {
-  const stored = localStorage.getItem(MASTER_KEY_STORAGE_KEY)
-  if (stored) {
-    return hexToUint8Array(stored)
-  }
-  const keyBytes = new Uint8Array(KEY_LENGTH)
-  crypto.getRandomValues(keyBytes)
-  const keyHex = bufferToHex(keyBytes.buffer as ArrayBuffer)
-  localStorage.setItem(MASTER_KEY_STORAGE_KEY, keyHex)
   return keyBytes
 }
 
-async function encryptWeb(plaintext: string): Promise<string> {
-  const keyBytes = await getMasterKeyBytesWeb()
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    toArrayBuffer(keyBytes),
-    { name: 'AES-GCM' },
-    false,
-    ['encrypt'],
-  )
-  const iv = new Uint8Array(IV_LENGTH)
-  crypto.getRandomValues(iv)
-  const ivBuf = toArrayBuffer(iv)
-  const encoded = new TextEncoder().encode(plaintext)
-  const cipherBuf = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: new Uint8Array(ivBuf) },
-    cryptoKey,
-    encoded,
-  )
-  return `${bufferToHex(ivBuf)}:${bufferToHex(cipherBuf)}`
-}
-
-async function decryptWeb(ciphertext: string): Promise<string> {
-  const parts = ciphertext.split(':')
-  if (parts.length !== 2) throw new Error('Invalid ciphertext format')
-  const [ivHex, cipherHex] = parts
-  const keyBytes = await getMasterKeyBytesWeb()
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    toArrayBuffer(keyBytes),
-    { name: 'AES-GCM' },
-    false,
-    ['decrypt'],
-  )
-  const iv = toArrayBuffer(hexToUint8Array(ivHex))
-  const cipherData = toArrayBuffer(hexToUint8Array(cipherHex))
-  const plainBuf = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
-    cryptoKey,
-    cipherData,
-  )
-  return new TextDecoder().decode(plainBuf)
-}
-
 // ─────────────────────────────────────────────
-// 플랫폼 분기 encrypt/decrypt
+// encrypt / decrypt (@noble/ciphers AES-256-GCM — 네이티브/웹 공통)
 // ─────────────────────────────────────────────
 
 async function encrypt(plaintext: string): Promise<string> {
-  return Platform.OS === 'web' ? encryptWeb(plaintext) : encryptNative(plaintext)
+  const keyBytes = await getMasterKeyBytes()
+  const iv = await Crypto.getRandomBytesAsync(IV_LENGTH)
+  const encoded = new TextEncoder().encode(plaintext)
+  const cipherBytes = gcm(keyBytes, new Uint8Array(iv)).encrypt(encoded)
+  return `${bufferToHex(iv.buffer as ArrayBuffer)}:${bufferToHex(cipherBytes.buffer as ArrayBuffer)}`
 }
 
 async function decrypt(ciphertext: string): Promise<string> {
-  return Platform.OS === 'web' ? decryptWeb(ciphertext) : decryptNative(ciphertext)
+  const parts = ciphertext.split(':')
+  if (parts.length !== 2) throw new Error('Invalid ciphertext format')
+  const [ivHex, cipherHex] = parts
+  const keyBytes = await getMasterKeyBytes()
+  const iv = hexToUint8Array(ivHex)
+  const cipherData = hexToUint8Array(cipherHex)
+  const plainBytes = gcm(keyBytes, iv).decrypt(cipherData)
+  return new TextDecoder().decode(plainBytes)
 }
 
 // ─────────────────────────────────────────────

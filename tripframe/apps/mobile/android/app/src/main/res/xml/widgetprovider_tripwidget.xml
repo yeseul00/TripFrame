@@ -2,20 +2,13 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="180dp"
     android:minHeight="110dp"
-
-
-
-
-
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
     android:resizeMode="none"
-
     android:description="@string/widget_tripwidget_description"
-
     android:initialLayout="@layout/rn_widget"
-
-
-
-
+    android:previewLayout="@layout/rn_widget"
     android:updatePeriodMillis="0"
+    android:widgetFeatures="reconfigurable|configuration_optional"
     android:widgetCategory="home_screen">
 </appwidget-provider>

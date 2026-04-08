@@ -55,7 +55,11 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const flatListRef = useRef<FlatList<Slide>>(null)
 
   async function complete() {
-    await encryptedStorage.setItem(ONBOARDING_FLAG_KEY, 'true')
+    try {
+      await encryptedStorage.setItem(ONBOARDING_FLAG_KEY, 'true')
+    } catch (e) {
+      console.warn('[Onboarding] storage error, proceeding anyway:', e)
+    }
     onComplete()
   }
 

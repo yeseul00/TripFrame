@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Platform, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useTripStore } from './src/store/useTripStore';
 import { MainTimelineScreen } from './src/screens/MainTimelineScreen';
@@ -12,6 +12,9 @@ import { encryptedStorage, migrateFromAsyncStorage, migrateMasterKey } from './s
 import { supabase } from './src/lib/supabase';
 import { ensureUserProfile } from './src/lib/userProfile';
 import { useRealtimeSync } from './src/hooks/useRealtimeSync';
+import { syncWidgetData, buildWidgetData } from './src/widget/widgetBridge';
+import { TripWidgetProvider } from './src/widget/TripWidgetProvider';
+import { requestWidgetUpdate } from 'react-native-android-widget';
 import type { Session } from '@supabase/supabase-js';
 import './global.css';
 
@@ -30,6 +33,8 @@ export default function App() {
   const currentTripId = useTripStore((state) => state.currentTripId);
   const selectTrip = useTripStore((state) => state.selectTrip);
   const currentTrip = useTripStore((state) => state.currentTrip);
+  const trips = useTripStore((state) => state.trips);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     // E2E 테스트 환경에서 온보딩 스킵 (?e2e=1 파라미터)
@@ -69,6 +74,30 @@ export default function App() {
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  // trips 변경 시 위젯 데이터 동기화 (Android only)
+  useEffect(() => {
+    // 첫 렌더(초기화 전)는 건너뜀 — trips가 아직 rehydrate 중일 수 있음
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (Platform.OS !== 'android') return;
+
+    const data = buildWidgetData(trips);
+    syncWidgetData(trips)
+      .then(() =>
+        requestWidgetUpdate({
+          widgetName: 'TripWidget',
+          renderWidget: () => ({
+            light: <TripWidgetProvider data={data} />,
+            dark: <TripWidgetProvider data={data} />,
+          }),
+          widgetNotFound: () => {},
+        })
+      )
+      .catch(() => {});
+  }, [trips]);
 
   // 키 마이그레이션 중 — 로딩 인디케이터 표시 (TASK-094)
   if (keyMigrating) {

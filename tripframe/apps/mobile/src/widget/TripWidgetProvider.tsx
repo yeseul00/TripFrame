@@ -2,8 +2,23 @@
 "use no memo";
 import React from 'react';
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
+import type { WidgetData } from './widgetBridge';
 
-export function TripWidgetProvider() {
+interface Props {
+  data?: WidgetData | null;
+}
+
+function formatDDay(dDay: number): string {
+  if (dDay === 0) return 'D-DAY';
+  if (dDay > 0) return `D-${dDay}`;
+  return `D+${Math.abs(dDay)}`;
+}
+
+export function TripWidgetProvider({ data }: Props) {
+  const hasTrip = data?.hasTrip ?? false;
+  const dDayText = hasTrip ? formatDDay(data!.dDay) : 'D-?';
+  const titleText = hasTrip ? data!.tripTitle : '여행을 추가하세요';
+
   return (
     <FlexWidget
       style={{
@@ -15,20 +30,29 @@ export function TripWidgetProvider() {
       }}
     >
       <TextWidget
-        text="TripFrame"
+        text={dDayText}
         style={{
-          fontSize: 16,
+          fontSize: 32,
           color: '#A78BFA',
           fontWeight: 'bold',
         }}
       />
       <TextWidget
-        text="여행을 추가하세요"
+        text={titleText}
         style={{
-          fontSize: 12,
-          color: '#9CA3AF',
+          fontSize: 14,
+          color: '#FFFFFF',
         }}
       />
+      {hasTrip && (
+        <TextWidget
+          text={`출발 ${data!.departureDate}`}
+          style={{
+            fontSize: 11,
+            color: '#9CA3AF',
+          }}
+        />
+      )}
     </FlexWidget>
   );
 }

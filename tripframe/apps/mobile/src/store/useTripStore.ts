@@ -5,7 +5,7 @@ import { Trip, DayTimeline, TripEvent } from '@tripframe/core';
 import { MOCK_TRIP, MOCK_REVERSE_CALC } from '@tripframe/core';
 import type { ReverseCalcResult } from '@tripframe/core';
 
-export type TabName = '일정' | '이동 체크' | '역산' | '설정';
+export type TabName = '홈' | '일정' | '스마트 체크' | '마이';
 
 interface TripStore {
   currentTab: TabName;
@@ -13,13 +13,17 @@ interface TripStore {
   currentTripId: string | null;
   selectedDayIndex: number;
   reverseCalc: ReverseCalcResult;
-  /** 딥링크: 이동 체크 탭에서 자동 펼칠 gapKey */
+  /** 딥링크: 스마트 체크 탭에서 자동 펼칠 gapKey */
   openGapKey: string | null;
+  /** 스마트 타임라인(역산) 모달 표시 여부 */
+  showReverseCalcModal: boolean;
 
   // Navigation
   setCurrentTab: (tab: TabName) => void;
   setSelectedDay: (index: number) => void;
   setOpenGapKey: (key: string | null) => void;
+  openReverseCalcModal: () => void;
+  closeReverseCalcModal: () => void;
 
   // Trip selectors
   currentTrip: () => Trip | null;
@@ -41,16 +45,19 @@ interface TripStore {
 export const useTripStore = create<TripStore>()(
   persist(
     (set, get) => ({
-      currentTab: '일정',
+      currentTab: '홈',
       trips: [MOCK_TRIP],
       currentTripId: null,
       selectedDayIndex: 0,
       reverseCalc: MOCK_REVERSE_CALC,
       openGapKey: null,
+      showReverseCalcModal: false,
 
       setCurrentTab: (tab) => set({ currentTab: tab }),
       setSelectedDay: (index) => set({ selectedDayIndex: index }),
       setOpenGapKey: (key) => set({ openGapKey: key }),
+      openReverseCalcModal: () => set({ showReverseCalcModal: true }),
+      closeReverseCalcModal: () => set({ showReverseCalcModal: false }),
 
       currentTrip: () => {
         const { trips, currentTripId } = get();

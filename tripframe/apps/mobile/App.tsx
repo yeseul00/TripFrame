@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Platform, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Platform, View, Text, TouchableOpacity, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useTripStore } from './src/store/useTripStore';
+import type { TabName } from './src/store/useTripStore';
 import { MainTimelineScreen } from './src/screens/MainTimelineScreen';
 import { MoveCheckScreen } from './src/screens/MoveCheckScreen';
 import { ReverseCalcDetailScreen } from './src/screens/ReverseCalcDetailScreen';
@@ -18,7 +19,12 @@ import { requestWidgetUpdate } from 'react-native-android-widget';
 import type { Session } from '@supabase/supabase-js';
 import './global.css';
 
-const TABS = ['일정', '이동 체크', '역산', '설정'] as const;
+const TABS: { key: TabName; label: string; icon: string }[] = [
+  { key: '홈', label: '홈', icon: '🏠' },
+  { key: '일정', label: '일정', icon: '🗺️' },
+  { key: '스마트 체크', label: '스마트 체크', icon: '💡' },
+  { key: '마이', label: '마이', icon: '👤' },
+];
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -60,6 +66,8 @@ export default function App() {
           setOnboardingDone(flag === 'true');
         });
       });
+
+    if (!supabase) return;
 
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
@@ -123,21 +131,14 @@ export default function App() {
     );
   }
 
-  // 홈 화면: 여행이 선택되지 않은 경우
-  if (!currentTripId) {
-    return (
-      <View className="flex-1 bg-background">
-        <StatusBar style="light" />
-        <HomeScreen onSelectTrip={(id) => selectTrip(id)} />
-      </View>
-    );
-  }
+  const showReverseCalcModal = useTripStore((state) => state.showReverseCalcModal);
+  const closeReverseCalcModal = useTripStore((state) => state.closeReverseCalcModal);
 
   /**
    * 딥링크 헬퍼 — 탭 전환 + 선택적 파라미터 전달
-   * 사용 예: navigateTo('이동 체크', { gapKey: 'A-B-0' })
+   * 사용 예: navigateTo('스마트 체크', { gapKey: 'A-B-0' })
    */
-  function navigateTo(tab: typeof TABS[number], params?: { gapKey?: string; dayIndex?: number }) {
+  function navigateTo(tab: TabName, params?: { gapKey?: string; dayIndex?: number }) {
     setCurrentTab(tab);
     if (params?.gapKey) {
       setOpenGapKey(params.gapKey);
@@ -149,56 +150,105 @@ export default function App() {
 
   const renderScreen = () => {
     switch (currentTab) {
-      case '일정': return <MainTimelineScreen />;
-      case '이동 체크': return <MoveCheckScreen />;
-      case '역산': return <ReverseCalcDetailScreen />;
-      case '설정': return <SettingsScreen syncStatus={syncStatus} />;
-      default: return <MainTimelineScreen />;
+      case '홈':
+        return <HomeScreen onSelectTrip={(id) => selectTrip(id)} />;
+      case '일정':
+        return currentTripId
+          ? <MainTimelineScreen />
+          : <NoTripPlaceholder onGoHome={() => setCurrentTab('홈')} />;
+      case '스마트 체크':
+        return currentTripId
+          ? <MoveCheckScreen />
+          : <NoTripPlaceholder onGoHome={() => setCurrentTab('홈')} />;
+      case '마이':
+        return <SettingsScreen syncStatus={syncStatus} />;
+      default:
+        return <HomeScreen onSelectTrip={(id) => selectTrip(id)} />;
     }
   };
+
+  const showHeader = currentTab !== '홈' && currentTripId;
 
   return (
     <View className="flex-1 bg-background">
       <StatusBar style="light" />
 
-      {/* Shared Top Header */}
-      <View className="flex-row items-center justify-between px-4 pt-12 pb-3 border-b border-gray-800">
-        <TouchableOpacity
-          onPress={() => selectTrip(null)}
-          className="px-3 py-1 rounded-full bg-card border border-gray-700 min-w-[60px]"
-        >
-          <Text className="text-muted text-xs text-center">← 홈</Text>
-        </TouchableOpacity>
-        <View className="items-center">
-          <Text className="text-white text-sm font-semibold">{currentTrip()?.title ?? ''}</Text>
-          <Text className="text-muted text-xs">{currentTab}</Text>
+      {/* Shared Top Header — trip 선택 시에만 표시 */}
+      {showHeader && (
+        <View className="flex-row items-center justify-between px-4 pt-12 pb-3 border-b border-gray-800">
+          <TouchableOpacity
+            onPress={() => { selectTrip(null); setCurrentTab('홈'); }}
+            className="px-3 py-1 rounded-full bg-card border border-gray-700 min-w-[60px]"
+          >
+            <Text className="text-muted text-xs text-center">← 홈</Text>
+          </TouchableOpacity>
+          <View className="items-center">
+            <Text className="text-white text-sm font-semibold">{currentTrip()?.title ?? ''}</Text>
+            <Text className="text-muted text-xs">{currentTab}</Text>
+          </View>
+          <View className="min-w-[60px]" />
         </View>
-        <View className="min-w-[60px]" />
-      </View>
+      )}
 
       {/* Active Screen */}
       <View className="flex-1">
         {renderScreen()}
       </View>
 
-      {/* Custom Bottom Tab Bar */}
-      <View className="flex-row bg-card/80 border-t border-gray-800 pb-8 pt-4 px-4 justify-around items-center">
+      {/* Custom Bottom Tab Bar — 4탭 (아이콘 + 라벨) */}
+      <View className="flex-row bg-card border-t border-gray-800 pb-8 pt-3 px-4 justify-around items-center">
         {TABS.map((tab) => {
-          const isActive = currentTab === tab;
+          const isActive = currentTab === tab.key;
           return (
             <TouchableOpacity
-              key={tab}
-              onPress={() => setCurrentTab(tab)}
-              className="items-center"
+              key={tab.key}
+              onPress={() => setCurrentTab(tab.key)}
+              className="items-center px-2"
             >
-              <Text className={`text-[12px] ${isActive ? 'text-primary font-bold' : 'text-muted'}`}>
-                {tab}
+              <Text className={`text-[20px] ${isActive ? '' : 'opacity-50'}`}>
+                {tab.icon}
               </Text>
-              {isActive && <View className="w-1 h-1 rounded-full bg-primary mt-1" />}
+              <Text className={`text-[10px] mt-1 ${isActive ? 'text-accent font-bold' : 'text-muted'}`}>
+                {tab.label}
+              </Text>
             </TouchableOpacity>
           );
         })}
       </View>
+
+      {/* 스마트 타임라인 (역산) 모달 */}
+      <Modal
+        visible={showReverseCalcModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={closeReverseCalcModal}
+      >
+        <View className="flex-1 bg-background">
+          <View className="flex-row items-center justify-between px-5 pt-14 pb-3 border-b border-gray-800">
+            <Text className="text-white text-lg font-bold">스마트 타임라인</Text>
+            <TouchableOpacity onPress={closeReverseCalcModal}>
+              <Text className="text-muted text-sm">닫기</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView className="flex-1">
+            <ReverseCalcDetailScreen />
+          </ScrollView>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+/** 여행이 선택되지 않았을 때 표시되는 플레이스홀더 */
+function NoTripPlaceholder({ onGoHome }: { onGoHome: () => void }) {
+  return (
+    <View className="flex-1 items-center justify-center px-8">
+      <Text className="text-muted text-3xl mb-3">🗺️</Text>
+      <Text className="text-white text-base font-semibold mb-2">여행을 선택해 주세요</Text>
+      <Text className="text-muted text-sm text-center mb-6">홈 탭에서 여행을 선택하면 일정과 스마트 체크를 확인할 수 있어요.</Text>
+      <TouchableOpacity onPress={onGoHome} className="bg-accent px-6 py-3 rounded-xl">
+        <Text className="text-white font-bold text-sm">홈으로 이동</Text>
+      </TouchableOpacity>
     </View>
   );
 }

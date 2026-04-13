@@ -16,11 +16,20 @@ interface TripCardProps {
   onExport: () => void;
 }
 
+function getDDay(startDate: string): string {
+  const start = new Date(startDate);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  start.setHours(0, 0, 0, 0);
+  const diff = Math.ceil((start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff === 0) return 'D-Day';
+  if (diff > 0) return `D-${diff}`;
+  return `D+${Math.abs(diff)}`;
+}
+
 function TripCard({ trip, onPress, onEdit, onExport }: TripCardProps) {
   const gapCount = trip.timelines.flatMap((t) => t.gaps).length;
-  const dangerCount = trip.timelines
-    .flatMap((t) => t.gaps)
-    .filter((g) => g.severity === 'DANGER').length;
+  const dDay = getDDay(trip.startDate);
 
   return (
     <TouchableOpacity
@@ -29,11 +38,13 @@ function TripCard({ trip, onPress, onEdit, onExport }: TripCardProps) {
     >
       <View className="flex-row justify-between items-start">
         <View className="flex-1 mr-3">
-          <Text className="text-white text-base font-semibold mb-0.5">{trip.title}</Text>
-          {trip.destination && (
-            <Text className="text-primary text-xs mb-1">📍 {trip.destination}</Text>
-          )}
-          <Text className="text-muted text-xs">
+          <View className="flex-row items-center gap-2 mb-1">
+            <Text className="text-white text-[15px] font-bold">{trip.title}</Text>
+            <View className="bg-accent/20 border border-accent/30 rounded-md px-2 py-0.5">
+              <Text className="text-accent text-[10px] font-bold">{dDay}</Text>
+            </View>
+          </View>
+          <Text className="text-muted text-[11px]">
             {trip.startDate} ~ {trip.endDate}
           </Text>
         </View>
@@ -62,20 +73,16 @@ function TripCard({ trip, onPress, onEdit, onExport }: TripCardProps) {
         </TouchableOpacity>
       </View>
 
-      {gapCount > 0 && (
-        <View className="flex-row items-center mt-2 gap-2">
-          {dangerCount > 0 && (
-            <View className="flex-row items-center bg-red-950/40 border border-danger/30 rounded-full px-2 py-0.5">
-              <View className="w-1.5 h-1.5 rounded-full bg-danger mr-1" />
-              <Text className="text-danger text-xs">위험 {dangerCount}개</Text>
-            </View>
-          )}
-          {gapCount - dangerCount > 0 && (
-            <View className="flex-row items-center bg-yellow-950/40 border border-warning/30 rounded-full px-2 py-0.5">
-              <View className="w-1.5 h-1.5 rounded-full bg-warning mr-1" />
-              <Text className="text-warning text-xs">경고 {gapCount - dangerCount}개</Text>
-            </View>
-          )}
+      {gapCount > 0 ? (
+        <View className="flex-row items-center mt-3 bg-orange-950/30 border border-warning-soft/20 rounded-xl px-3 py-2">
+          <View className="w-1.5 h-1.5 rounded-full bg-warning-soft mr-2" />
+          <Text className="text-warning-soft text-xs font-bold">
+            확인 필요한 일정이 {gapCount}건 있어요
+          </Text>
+        </View>
+      ) : (
+        <View className="flex-row items-center mt-3 bg-green-950/30 border border-success/20 rounded-xl px-3 py-2">
+          <Text className="text-success text-xs font-bold">✓ 모든 일정이 준비되었어요</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -106,17 +113,27 @@ export function HomeScreen({ onSelectTrip }: HomeScreenProps) {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-6">
-        <Text className="text-white text-2xl font-bold mb-6">내 여행</Text>
+        <Text className="text-white text-2xl font-bold mb-5">내 여행</Text>
 
-        {/* 새 여행 만들기 카드 — 최상단 고정 */}
-        <TouchableOpacity
-          onPress={openCreate}
-          className="bg-card border border-dashed border-primary/50 rounded-xl p-4 mb-4 items-center justify-center min-h-[72px]"
-        >
-          <Text className="text-primary text-base font-semibold">+ 새 여행 만들기</Text>
-        </TouchableOpacity>
+        {/* 스마트 액션 카드 */}
+        <View className="flex-row gap-3 mb-5">
+          <TouchableOpacity className="flex-1 bg-card border border-gray-800 rounded-2xl p-4">
+            <Text className="text-lg mb-2">📧</Text>
+            <Text className="text-white text-[13px] font-bold mb-1">메일 연동하기</Text>
+            <Text className="text-muted text-[10px]">예약 내역 자동 불러오기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity className="flex-1 bg-card border border-gray-800 rounded-2xl p-4">
+            <Text className="text-lg mb-2">📸</Text>
+            <Text className="text-white text-[13px] font-bold mb-1">e-티켓 스캔</Text>
+            <Text className="text-muted text-[10px]">이미지로 일정 추가하기</Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* 여행 목록 */}
+        {/* 다가오는 여행 */}
+        <View className="flex-row justify-between items-center mb-3 px-1">
+          <Text className="text-white text-[15px] font-bold">다가오는 여행</Text>
+        </View>
+
         {sortedTrips.map((trip) => (
           <TripCard
             key={trip.id}
@@ -127,8 +144,17 @@ export function HomeScreen({ onSelectTrip }: HomeScreenProps) {
           />
         ))}
 
+        {/* 새 여행 추가 (dashed border) */}
+        <TouchableOpacity
+          onPress={openCreate}
+          className="border-2 border-dashed border-gray-700 rounded-2xl p-5 items-center justify-center mb-4"
+        >
+          <Text className="text-muted text-2xl mb-1">+</Text>
+          <Text className="text-muted text-xs font-bold">직접 일정 추가하기</Text>
+        </TouchableOpacity>
+
         {sortedTrips.length === 0 && (
-          <Text className="text-muted text-center mt-12 text-sm">
+          <Text className="text-muted text-center mt-8 text-sm">
             아직 여행이 없습니다.{'\n'}새 여행을 만들어 보세요.
           </Text>
         )}

@@ -120,12 +120,22 @@ These rules are non-negotiable:
 9. **date-fns for dates** — No other date library
 10. **Gap is derived data** — Never store Gap directly; always compute from events
 
-## File Naming
+## Conventions
+
+### File Naming
 - Components: PascalCase
 - Functions/variables: camelCase
 - Files: kebab-case
 - Constants: UPPER_SNAKE_CASE
 - Types/Interfaces: PascalCase (no `I` prefix)
+
+### Commit Messages
+Format: `<type>: <subject>` — types: `feat`, `fix`, `test`, `docs`, `refactor`, `chore`
+
+### CI (GitHub Actions)
+- `.github/workflows/ci.yml` runs on PR to `main` (ubuntu, Node 20, pnpm 9)
+- Steps: install → core unit tests → core typecheck → mobile unit tests
+- PRs must pass CI before merge
 
 ## Phase Progress
 

@@ -1,8 +1,7 @@
 /**
- * MoveCheckScreen — 이동 체크 탭 (TASK-096)
+ * MoveCheckScreen — 스마트 체크 탭
  *
- * Phase 5: 공백감지(GapAnalysisScreen) + 제안카드(SuggestionScreen) 통합.
- * Gap 카드 탭 → 교통 옵션 인라인 펼침 + "예약 완료" 버튼.
+ * 공백감지 + 제안카드 통합. Gap 카드 탭 → 교통 옵션 인라인 펼침 + "예약 완료" 버튼.
  * RESOLVED 카드는 목록 하단 정렬.
  */
 
@@ -131,14 +130,14 @@ function GapCardWithOptions({
   const ranked = sortByPreference(rankOptions(options, DEFAULT_PREFS), transportPreference);
 
   return (
-    <View className={`mb-4 rounded-xl border ${isDanger ? 'border-danger/50' : 'border-warning/50'} overflow-hidden`}>
+    <View className={`mb-4 rounded-xl border border-warning-soft/30 overflow-hidden`}>
       {/* Gap 헤더 — 탭으로 토글 */}
       <TouchableOpacity
         onPress={onToggle}
         className="p-4 flex-row items-center justify-between"
       >
         <View className="flex-row items-center gap-2 flex-1">
-          <View className={`w-2 h-2 rounded-full ${isDanger ? 'bg-danger' : 'bg-warning'}`} />
+          <View className="w-2 h-2 rounded-full bg-warning-soft" />
           <Text className="text-white text-sm font-semibold flex-1" numberOfLines={1}>
             {fromTitle}
             <Text className="text-muted"> → </Text>
@@ -146,9 +145,9 @@ function GapCardWithOptions({
           </Text>
         </View>
         <View className="flex-row items-center gap-2 ml-2">
-          <View className={`px-2 py-0.5 rounded-full ${isDanger ? 'bg-danger/20' : 'bg-warning/20'}`}>
-            <Text className={`text-xs font-medium ${isDanger ? 'text-danger' : 'text-warning'}`}>
-              {isDanger ? 'DANGER' : 'WARNING'}
+          <View className="px-2 py-0.5 rounded-full bg-warning-soft/20">
+            <Text className="text-warning-soft text-xs font-medium">
+              확인 필요
             </Text>
           </View>
           <Text className="text-muted text-sm">{isExpanded ? '▲' : '▼'}</Text>

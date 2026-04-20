@@ -1,5 +1,5 @@
 /**
- * E2E 테스트: SCR-004 — 이동 체크 탭 교통 옵션 (MoveCheckScreen)
+ * E2E 테스트: SCR-004 — 스마트 체크 탭 교통 옵션 (MoveCheckScreen)
  *
  * TASK-096: suggestion.spec.ts는 moveCheck.spec.ts와 통합됨.
  * 이 파일은 교통 옵션 + 설정 탭 관련 핵심 TC만 유지.
@@ -11,19 +11,19 @@ import { selectMockTrip } from './helpers';
 const MOBILE = devices['Pixel 5'];
 test.use({ ...MOBILE });
 
-test.describe('SCR-004 이동 체크 탭 — 교통 옵션', () => {
+test.describe('SCR-004 스마트 체크 탭 — 교통 옵션', () => {
   test.beforeEach(async ({ page }) => {
     await selectMockTrip(page);
-    await page.locator('text=이동 체크').click();
-    // 첫 DANGER Gap은 자동 펼침 상태로 진입 — 별도 클릭 불필요
-    await page.waitForSelector('text=DANGER', { state: 'visible', timeout: 5000 });
+    await page.locator('text=스마트 체크').click();
+    // 첫 확인 필요 Gap은 자동 펼침 상태로 진입 — 별도 클릭 불필요
+    await page.waitForSelector('text=확인 필요', { state: 'visible', timeout: 5000 });
   });
 
-  test('[SCR-004-01] 이동 체크 탭 진입 확인', async ({ page }) => {
-    await expect(page.getByText('이동 체크').first()).toBeVisible();
+  test('[SCR-004-01] 스마트 체크 탭 진입 확인', async ({ page }) => {
+    await expect(page.getByText('스마트 체크').first()).toBeVisible();
   });
 
-  test('[SCR-004-02] DANGER Gap 구간이 표시됨 (하카타→유후인)', async ({ page }) => {
+  test('[SCR-004-02] 확인 필요 Gap 구간이 표시됨 (하카타→유후인)', async ({ page }) => {
     await expect(page.getByText(/하카타.*유후인|유후인.*하카타/).first()).toBeVisible();
   });
 
@@ -62,11 +62,11 @@ test.describe('SCR-004 이동 체크 탭 — 교통 옵션', () => {
 test.describe('SCR-005 설정 탭', () => {
   test.beforeEach(async ({ page }) => {
     await selectMockTrip(page);
-    await page.locator('text=설정').click();
+    await page.locator('text=마이').click();
   });
 
-  test('[SCR-005-01] "설정" 타이틀 표시', async ({ page }) => {
-    await expect(page.getByText('설정').first()).toBeVisible();
+  test('[SCR-005-01] "마이" 탭 진입 시 설정 화면 표시', async ({ page }) => {
+    await expect(page.getByText('짐 크기')).toBeVisible();
   });
 
   test('[SCR-005-02] 짐 크기 옵션 표시 (기내용 / 위탁용)', async ({ page }) => {

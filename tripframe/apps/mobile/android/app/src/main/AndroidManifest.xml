@@ -29,7 +29,7 @@
         <data android:scheme="exp+tripframe"/>
       </intent-filter>
     </activity>
-    <receiver android:name=".widget.TripWidget" android:exported="true" android:label="TripFrame D-day">
+    <receiver android:name=".widget.TripWidget" android:exported="false" android:label="TripFrame D-day">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
         <action android:name="com.tripframe.app.WIDGET_CLICK"/>

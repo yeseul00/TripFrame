@@ -15,7 +15,6 @@ import { ensureUserProfile } from './src/lib/userProfile';
 import { useRealtimeSync } from './src/hooks/useRealtimeSync';
 import { syncWidgetData, buildWidgetData } from './src/widget/widgetBridge';
 import { TripWidgetProvider } from './src/widget/TripWidgetProvider';
-import { requestWidgetUpdate } from 'react-native-android-widget';
 import type { Session } from '@supabase/supabase-js';
 import './global.css';
 
@@ -40,6 +39,8 @@ export default function App() {
   const selectTrip = useTripStore((state) => state.selectTrip);
   const currentTrip = useTripStore((state) => state.currentTrip);
   const trips = useTripStore((state) => state.trips);
+  const showReverseCalcModal = useTripStore((state) => state.showReverseCalcModal);
+  const closeReverseCalcModal = useTripStore((state) => state.closeReverseCalcModal);
   const isFirstRender = useRef(true);
 
   useEffect(() => {
@@ -95,14 +96,16 @@ export default function App() {
     const data = buildWidgetData(trips);
     syncWidgetData(trips)
       .then(() =>
-        requestWidgetUpdate({
-          widgetName: 'TripWidget',
-          renderWidget: () => ({
-            light: <TripWidgetProvider data={data} />,
-            dark: <TripWidgetProvider data={data} />,
-          }),
-          widgetNotFound: () => {},
-        })
+        import('react-native-android-widget').then(({ requestWidgetUpdate }) =>
+          requestWidgetUpdate({
+            widgetName: 'TripWidget',
+            renderWidget: () => ({
+              light: <TripWidgetProvider data={data} />,
+              dark: <TripWidgetProvider data={data} />,
+            }),
+            widgetNotFound: () => {},
+          })
+        )
       )
       .catch(() => {});
   }, [trips]);
@@ -130,9 +133,6 @@ export default function App() {
       </>
     );
   }
-
-  const showReverseCalcModal = useTripStore((state) => state.showReverseCalcModal);
-  const closeReverseCalcModal = useTripStore((state) => state.closeReverseCalcModal);
 
   /**
    * 딥링크 헬퍼 — 탭 전환 + 선택적 파라미터 전달

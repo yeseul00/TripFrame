@@ -34,6 +34,6 @@ export async function gotoHome(page: Page) {
 export async function selectMockTrip(page: Page) {
   await gotoHome(page);
   await page.getByText('후쿠오카 · 유후인').first().click();
-  // 탭바가 나타날 때까지 대기
-  await page.waitForSelector('text=일정', { state: 'visible', timeout: 8000 });
+  // 여행 선택 후 일정 탭으로 전환 — 헤더에 여행명이 표시될 때까지 대기
+  await page.waitForSelector('text=← 홈', { state: 'visible', timeout: 8000 });
 }

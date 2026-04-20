@@ -42,6 +42,43 @@ pnpm lint           # ESLint on apps/**/*.{ts,tsx} + packages/**/*.{ts,tsx}
 pnpm lint:fix       # Auto-fix
 ```
 
+## Vercel Web Deployment
+
+Vercel 서버 사이드 빌드는 OOM(exit code 137)으로 실패함 — **로컬에서 빌드 후 `dist/` 폴더만 배포**한다.
+
+```bash
+# 1. 웹 번들 빌드 (apps/mobile 디렉토리에서)
+cd tripframe/apps/mobile
+rm -rf dist && npx expo export --platform web --clear
+
+# 2. vercel.json을 dist/에 복사 (SPA rewrite 규칙 포함)
+cp vercel.json dist/vercel.json
+
+# 3. dist/ 폴더만 Vercel에 배포
+npx vercel deploy dist --yes --prod
+```
+
+**초기 설정 (최초 1회)**:
+```bash
+npm install -g vercel
+vercel login   # GitHub 계정 연결
+```
+
+**Supabase 환경변수 설정** (클라우드 동기화 활성화 시):
+```bash
+# tripframe/apps/mobile/.env 파일 생성
+EXPO_PUBLIC_SUPABASE_URL=<your-supabase-url>
+EXPO_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+# 이후 빌드 + 재배포
+```
+
+**주요 파일**:
+- `apps/mobile/vercel.json` — SPA rewrite (`/(.*) → /index.html`)
+- `apps/mobile/metro.config.js` — `resolveRequest`로 웹 빌드 시 `react-native-android-widget`을 `android-widget-stub.js`로 교체 (없으면 `registerHeadlessTask is not a function` 크래시)
+- `apps/mobile/src/widget/android-widget-stub.js` — 웹용 no-op stub
+
+**현재 배포 URL**: `https://dist-blue-psi-34.vercel.app`
+
 ## Windows Dev Environment Gotchas
 
 - **Port 8081 blocked by Windows Firewall** — use `expo start --tunnel` (ngrok) instead of LAN IP

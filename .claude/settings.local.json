@@ -58,11 +58,43 @@
       "mcp__claude_ai_Notion__notion-update-page",
       "mcp__claude_ai_Notion__notion-create-pages",
       "mcp__claude_ai_Notion__notion-update-data-source",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(git stash:*)",
+      "Bash(git pull:*)",
+      "Bash(eas build:view a67ff698-ce7d-4e7d-bdf7-39f5ba41405e --json)",
+      "WebFetch(domain:job-logs.eascdn.net)",
+      "Bash(EAS_SKIP_AUTO_FINGERPRINT=1 eas build --profile preview --platform android --non-interactive --clear-cache 2>&1)",
+      "Bash(pnpm --filter @tripframe/core test)",
+      "Bash(pnpm --filter mobile test)",
+      "Bash(find /Users/seul/DEVELOPER/TripFrame -name *가이드* -o -name *빌드*)",
+      "WebFetch(domain:status.ngrok.com)",
+      "Bash(pnpm --filter mobile remove @expo/ngrok)",
+      "Bash(pnpm --filter mobile add -D @expo/ngrok)",
+      "Bash(ipconfig getifaddr:*)",
+      "Bash(ping:*)",
+      "Bash(sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getblockall)",
+      "Bash(nc -z -w 2 192.168.1.197 8081)",
+      "Bash(npx ngrok:*)",
+      "Bash(curl -s http://localhost:4040/api/tunnels)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d[''''tunnels''''][0][''''public_url'''']\\)\")",
+      "Bash(open:*)",
+      "Bash(BASE_URL=http://localhost:8081 npx playwright test --reporter=list)",
+      "Bash(curl -s http://localhost:8081)",
+      "Bash(lsof -ti:8081)",
+      "Bash(xargs kill:*)",
+      "Bash(xargs ls:*)",
+      "Bash(awk '{print $5, $NF}')",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'Failed: {len\\(d[\\\\\"failedTests\\\\\"]\\)}'\\)\")",
+      "Bash(python3 -c \" import json, sys data = json.load\\(sys.stdin\\) for suite in data.get\\('suites', []\\): for s2 in suite.get\\('suites', []\\): for spec in s2.get\\('specs', []\\): for test in spec.get\\('tests', []\\): status = test.get\\('status'\\) if status != 'expected': title = spec.get\\('title', ''\\) file = spec.get\\('file', s2.get\\('title', ''\\)\\) print\\(f'{status}: {title}'\\) \")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'Status: {d[\\\\\"status\\\\\"]}'\\); print\\(f'Failed count: {len\\(d[\\\\\"failedTests\\\\\"]\\)}'\\)\")",
+      "Bash(pnpm --filter mobile web)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in d.get\\('dependencies',{}\\).items\\(\\) if 'expo' in k or 'webpack' in k or 'metro' in k}, indent=2\\)\\)\")",
+      "Bash(npx vercel:*)",
+      "Bash(bash /Users/seul/DEVELOPER/TripFrame/.specify/scripts/bash/setup-plan.sh --json)"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "playwright"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

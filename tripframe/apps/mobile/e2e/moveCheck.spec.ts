@@ -1,5 +1,5 @@
 /**
- * E2E 테스트: SCR-002 — 이동 체크 탭 (MoveCheckScreen)
+ * E2E 테스트: SCR-002 — 스마트 체크 탭 (MoveCheckScreen)
  *
  * TASK-096: gap.spec.ts + suggestion.spec.ts → moveCheck.spec.ts 통합 재작성
  *
@@ -16,14 +16,14 @@ import { selectMockTrip } from './helpers';
 const MOBILE = devices['Pixel 5'];
 test.use({ ...MOBILE });
 
-test.describe('SCR-002 이동 체크 탭 — 기본 렌더', () => {
+test.describe('SCR-002 스마트 체크 탭 — 기본 렌더', () => {
   test.beforeEach(async ({ page }) => {
     await selectMockTrip(page);
-    await page.locator('text=이동 체크').click();
+    await page.locator('text=스마트 체크').click();
   });
 
-  test('[SCR-002-01] "이동 체크" 탭 이름 표시', async ({ page }) => {
-    await expect(page.getByText('이동 체크').first()).toBeVisible();
+  test('[SCR-002-01] "스마트 체크" 탭 이름 표시', async ({ page }) => {
+    await expect(page.getByText('스마트 체크').first()).toBeVisible();
   });
 
   test('[SCR-002-02] 미해결/완료 카운트 요약 표시', async ({ page }) => {
@@ -35,22 +35,22 @@ test.describe('SCR-002 이동 체크 탭 — 기본 렌더', () => {
   });
 });
 
-test.describe('SCR-002 이동 체크 탭 — Gap 목록 (TC-009~015)', () => {
+test.describe('SCR-002 스마트 체크 탭 — Gap 목록 (TC-009~015)', () => {
   test.beforeEach(async ({ page }) => {
     await selectMockTrip(page);
-    await page.locator('text=이동 체크').click();
+    await page.locator('text=스마트 체크').click();
   });
 
-  // ── TC-011: DANGER Gap 표시 ──────────────────────────────────────────────
+  // ── TC-011: 확인 필요 Gap 표시 ──────────────────────────────────────────────
 
-  test('[TC-011] DANGER 배지가 1개 이상 표시됨', async ({ page }) => {
-    await expect(page.getByText('DANGER').first()).toBeVisible();
-    const count = await page.getByText('DANGER').count();
+  test('[TC-011] 확인 필요 배지가 1개 이상 표시됨', async ({ page }) => {
+    await expect(page.getByText('확인 필요').first()).toBeVisible();
+    const count = await page.getByText('확인 필요').count();
     expect(count).toBeGreaterThanOrEqual(1);
   });
 
-  test('[TC-011-B] DANGER 배지 정확히 2개 (샘플 데이터 기준)', async ({ page }) => {
-    await expect(page.getByText('DANGER')).toHaveCount(2);
+  test('[TC-011-B] 확인 필요 배지 정확히 2개 (샘플 데이터 기준)', async ({ page }) => {
+    await expect(page.getByText('확인 필요')).toHaveCount(2);
   });
 
   // ── TC-009: Gap 메시지 내용 ──────────────────────────────────────────────
@@ -64,7 +64,7 @@ test.describe('SCR-002 이동 체크 탭 — Gap 목록 (TC-009~015)', () => {
 
   test('[TC-014] Gap 카드 탭 시 교통 옵션 인라인 펼쳐짐', async ({ page }) => {
     // 기본 펼침 상태 → 닫기 → 다시 열기 순서로 토글 동작 검증
-    const card = page.getByText('DANGER').first().locator('..').locator('..');
+    const card = page.getByText('확인 필요').first().locator('..').locator('..');
     await card.click(); // 닫기
     await expect(page.getByText(/대중교통|택시|렌터카/).first()).not.toBeVisible({ timeout: 3000 });
     await card.click(); // 열기
@@ -101,36 +101,36 @@ test.describe('SCR-002 이동 체크 탭 — Gap 목록 (TC-009~015)', () => {
   });
 });
 
-test.describe('SCR-002 이동 체크 탭 — 교통 옵션 필터 (SC-004)', () => {
+test.describe('SCR-002 스마트 체크 탭 — 교통 옵션 필터 (SC-004)', () => {
   test.beforeEach(async ({ page }) => {
     await selectMockTrip(page);
   });
 
   test('[SCR-004-09] 설정: 대중교통 선택 시 대중교통 옵션 표시됨', async ({ page }) => {
-    await page.locator('text=설정').click();
+    await page.locator('text=마이').click();
     await page.getByText('대중교통').click();
-    await page.locator('text=이동 체크').click();
-    // 이동 체크 진입 시 첫 DANGER Gap 자동 펼침 — 별도 클릭 불필요
+    await page.locator('text=스마트 체크').click();
+    // 스마트 체크 진입 시 첫 확인 필요 Gap 자동 펼침 — 별도 클릭 불필요
     await expect(page.getByText('대중교통').first()).toBeVisible();
   });
 
   test('[SCR-004-10] 설정: 택시 선택 시 택시 옵션 표시됨', async ({ page }) => {
-    await page.locator('text=설정').click();
+    await page.locator('text=마이').click();
     await page.getByText('택시').click();
-    await page.locator('text=이동 체크').click();
-    // 이동 체크 진입 시 첫 DANGER Gap 자동 펼침 — 별도 클릭 불필요
+    await page.locator('text=스마트 체크').click();
+    // 스마트 체크 진입 시 첫 확인 필요 Gap 자동 펼침 — 별도 클릭 불필요
     await expect(page.getByText('택시').first()).toBeVisible();
   });
 
   test('[SCR-004-06] 인원 + 버튼 클릭 시 인원 증가', async ({ page }) => {
-    await page.locator('text=이동 체크').click();
+    await page.locator('text=스마트 체크').click();
     await page.getByText('+').first().click();
     await expect(page.getByText(/× 2명/).first()).toBeVisible();
   });
 
   test('[SCR-004-07] 인원 증가 시 합산 요금 변경됨', async ({ page }) => {
-    await page.locator('text=이동 체크').click();
-    // 첫 DANGER Gap 자동 펼침 상태이므로 바로 요금 확인
+    await page.locator('text=스마트 체크').click();
+    // 첫 확인 필요 Gap 자동 펼침 상태이므로 바로 요금 확인
     const priceBefore = await page.getByText(/[0-9,]+원/).first().textContent();
     await page.getByText('+').first().click();
     const priceAfter = await page.getByText(/[0-9,]+원/).first().textContent();
@@ -138,14 +138,14 @@ test.describe('SCR-002 이동 체크 탭 — 교통 옵션 필터 (SC-004)', () 
   });
 });
 
-test.describe('SCR-002 이동 체크 탭 — 탭 전환', () => {
+test.describe('SCR-002 스마트 체크 탭 — 탭 전환', () => {
   test.beforeEach(async ({ page }) => {
     await selectMockTrip(page);
   });
 
   test('[SCR-002-04] 일정 탭으로 돌아가면 TimelineScreen 재렌더', async ({ page }) => {
-    await page.locator('text=이동 체크').click();
-    await page.locator('text=일정').click();
-    await expect(page.getByText('후쿠오카 · 유후인')).toBeVisible();
+    await page.locator('text=스마트 체크').first().click();
+    await page.locator('text=일정').first().click();
+    await expect(page.getByText('후쿠오카 · 유후인').first()).toBeVisible();
   });
 });

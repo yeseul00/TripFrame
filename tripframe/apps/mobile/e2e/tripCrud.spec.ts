@@ -19,13 +19,13 @@ test.describe('TripFormModal — 여행 생성', () => {
   });
 
   test('[CRUD-01] "+ 새 여행 만들기" 탭 → 모달이 열린다', async ({ page }) => {
-    await page.getByText('+ 새 여행 만들기').click();
+    await page.getByText('직접 일정 추가하기').click();
     // '새 여행' 텍스트는 모달 헤더에 있음 (exact: true로 중복 회피)
     await expect(page.getByText('새 여행', { exact: true })).toBeVisible();
   });
 
   test('[CRUD-02] 여행명 없이 저장 시도 → 인라인 오류 메시지가 표시된다', async ({ page }) => {
-    await page.getByText('+ 새 여행 만들기').click();
+    await page.getByText('직접 일정 추가하기').click();
 
     await page.getByText('저장', { exact: true }).click();
     // React Native Web은 Alert.alert()가 no-op이므로 인라인 에러 텍스트로 표시
@@ -33,7 +33,7 @@ test.describe('TripFormModal — 여행 생성', () => {
   });
 
   test('[CRUD-03] 여행명 입력 후 저장 → 홈 목록에 추가된다', async ({ page }) => {
-    await page.getByText('+ 새 여행 만들기').click();
+    await page.getByText('직접 일정 추가하기').click();
     // 여행명 필드: 첫 번째 textbox (후쿠오카 · 유후인 placeholder)
     await page.getByPlaceholder('예: 후쿠오카 · 유후인').fill('도쿄 여행');
     await page.getByText('저장', { exact: true }).click();
@@ -41,19 +41,19 @@ test.describe('TripFormModal — 여행 생성', () => {
   });
 
   test('[CRUD-04] 모달 "취소" 탭 → 모달이 닫힌다', async ({ page }) => {
-    await page.getByText('+ 새 여행 만들기').click();
+    await page.getByText('직접 일정 추가하기').click();
     await expect(page.getByText('새 여행', { exact: true })).toBeVisible();
     await page.getByText('취소', { exact: true }).click();
     await expect(page.getByText('내 여행')).toBeVisible();
     await expect(page.getByText('새 여행', { exact: true })).not.toBeVisible();
   });
 
-  test('[CRUD-05] 여행명 + 목적지 입력 → 저장 후 목적지가 카드에 표시된다', async ({ page }) => {
-    await page.getByText('+ 새 여행 만들기').click();
+  test('[CRUD-05] 여행명 + 목적지 입력 → 저장 후 여행명이 카드에 표시된다', async ({ page }) => {
+    await page.getByText('직접 일정 추가하기').click();
     await page.getByPlaceholder('예: 후쿠오카 · 유후인').fill('오사카 여행');
     await page.getByPlaceholder('예: 일본 후쿠오카').fill('일본 오사카');
     await page.getByText('저장', { exact: true }).click();
-    await expect(page.getByText('일본 오사카')).toBeVisible();
+    await expect(page.getByText('오사카 여행')).toBeVisible();
   });
 });
 
@@ -87,7 +87,7 @@ test.describe('TripFormModal — 여행 삭제', () => {
   test.beforeEach(async ({ page }) => {
     await gotoHome(page);
     // 삭제용 임시 여행 추가
-    await page.getByText('+ 새 여행 만들기').click();
+    await page.getByText('직접 일정 추가하기').click();
     await page.getByPlaceholder('예: 후쿠오카 · 유후인').fill('삭제용 여행');
     await page.getByText('저장', { exact: true }).click();
   });

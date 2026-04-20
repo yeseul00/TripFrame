@@ -80,6 +80,7 @@ export function SettingsScreen({ syncStatus = 'idle' }: SettingsScreenProps) {
   const { settings, updateSettings } = useSettingsStore();
 
   useEffect(() => {
+    if (!supabase) return;
     supabase.auth.getSession().then(async ({ data }) => {
       const uid = data.session?.user.id ?? null;
       setUserId(uid);
@@ -91,6 +92,7 @@ export function SettingsScreen({ syncStatus = 'idle' }: SettingsScreenProps) {
   }, []);
 
   async function handleSignOut() {
+    if (!supabase) return;
     await supabase.auth.signOut();
     setUserId(null);
     setProfile(null);
@@ -171,6 +173,7 @@ function FeedbackSection({ userId }: { userId: string | null }) {
 
   async function handleSubmit() {
     if (rating === 0) return;
+    if (!supabase) return;
     await supabase.from('feedback').insert([{
       user_id: userId ?? null,
       rating,

@@ -12,7 +12,7 @@ test.use({ ...MOBILE });
 test.describe('P1 — 짐 많은 여행자 (설정 화면 기준)', () => {
   test.beforeEach(async ({ page }) => {
     await selectMockTrip(page);
-    await page.locator('text=설정').click();
+    await page.locator('text=마이').click();
   });
 
   test('[P1-01] "위탁용" 짐 크기 선택 가능', async ({ page }) => {
@@ -31,10 +31,10 @@ test.describe('P1 — 짐 많은 여행자 (설정 화면 기준)', () => {
   });
 });
 
-test.describe('P2 — 알뜰 배낭여행자 (이동 체크 화면 검증)', () => {
+test.describe('P2 — 알뜰 배낭여행자 (스마트 체크 화면 검증)', () => {
   test.beforeEach(async ({ page }) => {
     await selectMockTrip(page);
-    await page.locator('text=이동 체크').click();
+    await page.locator('text=스마트 체크').click();
   });
 
   test('[P2-01] 구간별 대중교통 옵션이 표시됨', async ({ page }) => {
@@ -55,30 +55,31 @@ test.describe('P2 — 알뜰 배낭여행자 (이동 체크 화면 검증)', () 
   });
 });
 
-test.describe('P3 — 빡빡한 비즈니스 여행자 (역산 + 이동 체크)', () => {
-  test('[P3-01] 역산 화면에서 출발 시각이 표시됨', async ({ page }) => {
+test.describe('P3 — 빡빡한 비즈니스 여행자 (스마트 타임라인 + 스마트 체크)', () => {
+  test('[P3-01] 스마트 타임라인 모달에서 출발 시각이 표시됨', async ({ page }) => {
     await selectMockTrip(page);
-    await page.locator('text=역산').first().click();
-    await expect(page.getByText('09:20')).toBeVisible(); // ICN→홍대 버스 70분(DB 조회)
+    await page.getByText('Day 1').click();
+    await page.getByText('스마트 타임라인').first().click();
+    await expect(page.getByText('09:20').first()).toBeVisible();
   });
 
-  test('[P3-02] 이동 체크에서 90분 이내 옵션 존재 (택시 90분)', async ({ page }) => {
+  test('[P3-02] 스마트 체크에서 90분 이내 옵션 존재 (택시 90분)', async ({ page }) => {
     await selectMockTrip(page);
-    await page.locator('text=이동 체크').click();
+    await page.locator('text=스마트 체크').click();
     await expect(page.getByText('90분')).toBeVisible();
   });
 
-  test('[P3-03] 이동 체크에서 DANGER 경고 2건 표시', async ({ page }) => {
+  test('[P3-03] 스마트 체크에서 확인 필요 경고 2건 표시', async ({ page }) => {
     await selectMockTrip(page);
-    await page.locator('text=이동 체크').click();
-    await expect(page.getByText('DANGER')).toHaveCount(2);
+    await page.locator('text=스마트 체크').click();
+    await expect(page.getByText('확인 필요')).toHaveCount(2);
   });
 });
 
 test.describe('공통 — 인원수 요금 계산 검증', () => {
   test.beforeEach(async ({ page }) => {
     await selectMockTrip(page);
-    await page.locator('text=이동 체크').click();
+    await page.locator('text=스마트 체크').click();
   });
 
   test('[COST-01] 기본 1인 요금 표시 확인', async ({ page }) => {

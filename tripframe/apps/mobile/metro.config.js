@@ -4,6 +4,21 @@ const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
+// 웹 플랫폼 추가 — .web.ts / .web.tsx 파일 해석을 위해 필요
+config.resolver.platforms = ['ios', 'android', 'native', 'web'];
+
+// 웹 빌드 시 react-native-android-widget → no-op stub으로 교체
+// (FlexWidget, registerWidgetTaskHandler 등이 웹 번들에 포함되지 않도록)
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (platform === 'web' && moduleName === 'react-native-android-widget') {
+    return {
+      filePath: require('path').resolve(__dirname, 'src/widget/android-widget-stub.js'),
+      type: 'sourceFile',
+    };
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 config.resolver.extraNodeModules = {
   '@tripframe/core': path.resolve(__dirname, '../../packages/core'),
 };

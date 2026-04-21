@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { fetchRemoteTrips } from '../lib/supabaseSync';
+import { dbRowToTrip, mergeTripsOnLogin } from '../lib/tripMapper';
+import { useTripStore } from '../store/useTripStore';
 
 export type SyncStatus = 'idle' | 'connected' | 'offline';
 
@@ -7,7 +10,7 @@ export function useRealtimeSync(userId: string | null): SyncStatus {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !supabase) {
       setSyncStatus('idle');
       return;
     }
@@ -22,20 +25,15 @@ export function useRealtimeSync(userId: string | null): SyncStatus {
           table: 'trips',
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
-          console.log('[Realtime] Trip 변경 감지:', payload.eventType, payload.new);
-          // TODO: TASK-040 store와 연동 시 여기서 useTripStore.getState().syncFromRemote() 호출
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'events',
-        },
-        (payload) => {
-          console.log('[Realtime] Event 변경 감지:', payload.eventType, payload.new);
+        () => {
+          // 원격에서 변경 감지 → 전체 재조회 후 로컬 store와 병합
+          fetchRemoteTrips(userId).then((rows) => {
+            if (rows.length === 0) return;
+            const remoteTrips = rows.map(dbRowToTrip);
+            const localTrips = useTripStore.getState().trips;
+            const merged = mergeTripsOnLogin(localTrips, remoteTrips);
+            useTripStore.getState().setTrips(merged);
+          });
         },
       )
       .subscribe((status) => {

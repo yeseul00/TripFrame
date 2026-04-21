@@ -4,18 +4,26 @@ import { encryptedStorage } from '../storage/encryptedStorage';
 import { Trip, DayTimeline, TripEvent } from '@tripframe/core';
 import { MOCK_TRIP, MOCK_REVERSE_CALC } from '@tripframe/core';
 import type { ReverseCalcResult } from '@tripframe/core';
+import { syncEngine } from '../lib/supabaseSync';
+import { tripToDbRow } from '../lib/tripMapper';
 
 export type TabName = '홈' | '일정' | '스마트 체크' | '마이';
 
+// ─── 현재 로그인한 userId (App.tsx에서 주입) ───────────────────────────────
+let _userId: string | null = null;
+
+export function setStoreUserId(id: string | null) {
+  _userId = id;
+}
+
+// ─── 타입 ─────────────────────────────────────────────────────────────────
 interface TripStore {
   currentTab: TabName;
   trips: Trip[];
   currentTripId: string | null;
   selectedDayIndex: number;
   reverseCalc: ReverseCalcResult;
-  /** 딥링크: 스마트 체크 탭에서 자동 펼칠 gapKey */
   openGapKey: string | null;
-  /** 스마트 타임라인(역산) 모달 표시 여부 */
   showReverseCalcModal: boolean;
 
   // Navigation
@@ -35,6 +43,7 @@ interface TripStore {
   updateTrip: (id: string, updates: Partial<Trip>) => void;
   deleteTrip: (id: string) => void;
   selectTrip: (id: string | null) => void;
+  setTrips: (trips: Trip[]) => void;
 
   // Event actions
   addEvent: (tripId: string, dayIndex: number, event: TripEvent) => void;
@@ -42,6 +51,7 @@ interface TripStore {
   deleteEvent: (tripId: string, dayIndex: number, eventId: string) => void;
 }
 
+// ─── Store ────────────────────────────────────────────────────────────────
 export const useTripStore = create<TripStore>()(
   persist(
     (set, get) => ({
@@ -77,30 +87,47 @@ export const useTripStore = create<TripStore>()(
         return trip.timelines.flatMap((t) => t.gaps);
       },
 
-      addTrip: (trip) =>
-        set((state) => ({ trips: [...state.trips, trip] })),
+      addTrip: (trip) => {
+        set((state) => ({ trips: [...state.trips, trip] }));
+        if (_userId) {
+          syncEngine.enqueue('UPSERT_TRIP', tripToDbRow(trip, _userId) as never);
+        }
+      },
 
-      updateTrip: (id, updates) =>
+      updateTrip: (id, updates) => {
         set((state) => ({
           trips: state.trips.map((t) =>
             t.id === id ? { ...t, ...updates } : t
           ),
-        })),
+        }));
+        if (_userId) {
+          const updated = get().trips.find((t) => t.id === id);
+          if (updated) {
+            syncEngine.enqueue('UPSERT_TRIP', tripToDbRow(updated, _userId) as never);
+          }
+        }
+      },
 
-      deleteTrip: (id) =>
+      deleteTrip: (id) => {
         set((state) => ({
           trips: state.trips.filter((t) => t.id !== id),
           currentTripId: state.currentTripId === id ? null : state.currentTripId,
-        })),
+        }));
+        if (_userId) {
+          syncEngine.enqueue('DELETE_TRIP', { id });
+        }
+      },
 
       selectTrip: (id) =>
         set({ currentTripId: id, selectedDayIndex: 0, currentTab: '일정' }),
 
-      addEvent: (tripId, dayIndex, event) =>
+      // Realtime 수신 또는 로그인 시 원격 데이터 병합에 사용
+      setTrips: (trips) => set({ trips }),
+
+      addEvent: (tripId, dayIndex, event) => {
         set((state) => ({
           trips: state.trips.map((t) => {
             if (t.id !== tripId) return t;
-            // 빈 여행: dayIndex=0에 첫 타임라인 자동 생성
             const base = t.timelines.length === 0
               ? [{ day: 1, date: '', events: [], gaps: [] }]
               : [...t.timelines];
@@ -110,9 +137,16 @@ export const useTripStore = create<TripStore>()(
             });
             return { ...t, timelines };
           }),
-        })),
+        }));
+        if (_userId) {
+          const updatedTrip = get().trips.find((t) => t.id === tripId);
+          if (updatedTrip) {
+            syncEngine.enqueue('UPSERT_TRIP', tripToDbRow(updatedTrip, _userId) as never);
+          }
+        }
+      },
 
-      updateEvent: (tripId, dayIndex, eventId, updates) =>
+      updateEvent: (tripId, dayIndex, eventId, updates) => {
         set((state) => ({
           trips: state.trips.map((t) => {
             if (t.id !== tripId) return t;
@@ -127,9 +161,16 @@ export const useTripStore = create<TripStore>()(
             });
             return { ...t, timelines };
           }),
-        })),
+        }));
+        if (_userId) {
+          const updatedTrip = get().trips.find((t) => t.id === tripId);
+          if (updatedTrip) {
+            syncEngine.enqueue('UPSERT_TRIP', tripToDbRow(updatedTrip, _userId) as never);
+          }
+        }
+      },
 
-      deleteEvent: (tripId, dayIndex, eventId) =>
+      deleteEvent: (tripId, dayIndex, eventId) => {
         set((state) => ({
           trips: state.trips.map((t) => {
             if (t.id !== tripId) return t;
@@ -142,7 +183,14 @@ export const useTripStore = create<TripStore>()(
             });
             return { ...t, timelines };
           }),
-        })),
+        }));
+        if (_userId) {
+          const updatedTrip = get().trips.find((t) => t.id === tripId);
+          if (updatedTrip) {
+            syncEngine.enqueue('UPSERT_TRIP', tripToDbRow(updatedTrip, _userId) as never);
+          }
+        }
+      },
     }),
     {
       name: 'tripframe-storage',
@@ -152,7 +200,6 @@ export const useTripStore = create<TripStore>()(
         currentTripId: state.currentTripId,
       }),
       onRehydrateStorage: () => (state) => {
-        // 첫 실행 시 trips가 비어있으면 Mock 데이터 삽입
         if (state && state.trips.length === 0) {
           state.trips = [MOCK_TRIP];
         }

@@ -21,6 +21,7 @@ type UserProfileUpdates = {
 };
 
 export async function ensureUserProfile(userId: string): Promise<UserProfile | null> {
+  if (!supabase) return null;
   const { data: existing } = await supabase
     .from('user_profiles')
     .select('*')
@@ -44,6 +45,7 @@ export async function ensureUserProfile(userId: string): Promise<UserProfile | n
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from('user_profiles')
     .select('*')
@@ -62,6 +64,7 @@ export async function updateUserProfile(
   userId: string,
   updates: UserProfileUpdates,
 ): Promise<UserProfile | null> {
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from('user_profiles')
     .update({ ...updates, updated_at: new Date().toISOString() } as never)

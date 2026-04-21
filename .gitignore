@@ -46,5 +46,9 @@ coverage/
 # Obsidian
 .obsidian/
 
+# Claude Code
+.claude/worktrees/
+.claude/commands/
+
 # Sensitive docs (credentials)
 docs/supa.md

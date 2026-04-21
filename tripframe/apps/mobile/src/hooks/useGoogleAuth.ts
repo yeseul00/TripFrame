@@ -29,6 +29,7 @@ export function useGoogleAuth() {
 
   useEffect(() => {
     if (response?.type !== 'success') return;
+    if (!supabase) return;
 
     const idToken = response.params['id_token'];
     if (!idToken) return;

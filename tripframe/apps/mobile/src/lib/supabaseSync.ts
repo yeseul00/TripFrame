@@ -2,9 +2,10 @@ import { supabase } from './supabase';
 import { SyncEngine } from '@tripframe/core';
 import type { SyncTask } from '@tripframe/core';
 import { resolveConflict } from '@tripframe/core';
-import type { UserProfile } from './userProfile';
 
 async function executeTask(task: SyncTask): Promise<void> {
+  if (!supabase) return;
+
   switch (task.type) {
     case 'UPSERT_TRIP':
       await supabase.from('trips').upsert(task.payload as never);
@@ -23,9 +24,11 @@ async function executeTask(task: SyncTask): Promise<void> {
 
 export const syncEngine = new SyncEngine(executeTask);
 
-type RemoteTrip = { id: string; updated_at: string; [key: string]: unknown };
+export type RemoteTrip = { id: string; updated_at: string; [key: string]: unknown };
 
 export async function fetchRemoteTrips(userId: string): Promise<RemoteTrip[]> {
+  if (!supabase) return [];
+
   const { data, error } = await supabase
     .from('trips')
     .select('*')

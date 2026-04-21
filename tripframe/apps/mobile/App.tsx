@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Platform, View, Text, TouchableOpacity, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useTripStore } from './src/store/useTripStore';
+import { useTripStore, setStoreUserId } from './src/store/useTripStore';
 import type { TabName } from './src/store/useTripStore';
 import { MainTimelineScreen } from './src/screens/MainTimelineScreen';
 import { MoveCheckScreen } from './src/screens/MoveCheckScreen';
@@ -12,6 +12,8 @@ import { OnboardingScreen, ONBOARDING_FLAG_KEY } from './src/screens/OnboardingS
 import { encryptedStorage, migrateFromAsyncStorage, migrateMasterKey } from './src/storage/encryptedStorage';
 import { supabase } from './src/lib/supabase';
 import { ensureUserProfile } from './src/lib/userProfile';
+import { fetchRemoteTrips } from './src/lib/supabaseSync';
+import { dbRowToTrip, mergeTripsOnLogin } from './src/lib/tripMapper';
 import { useRealtimeSync } from './src/hooks/useRealtimeSync';
 import { syncWidgetData, buildWidgetData } from './src/widget/widgetBridge';
 import { TripWidgetProvider } from './src/widget/TripWidgetProvider';
@@ -76,8 +78,22 @@ export default function App() {
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
-      if (newSession?.user) {
-        ensureUserProfile(newSession.user.id);
+      const uid = newSession?.user.id ?? null;
+
+      // syncEngine에 userId 주입 (로그아웃 시 null)
+      setStoreUserId(uid);
+
+      if (uid) {
+        ensureUserProfile(uid);
+
+        // 로그인 직후 원격 Trip 불러와 로컬과 병합 (remote 우선, local-only 보존)
+        fetchRemoteTrips(uid).then((rows) => {
+          if (rows.length === 0) return;
+          const remoteTrips = rows.map(dbRowToTrip);
+          const localTrips = useTripStore.getState().trips;
+          const merged = mergeTripsOnLogin(localTrips, remoteTrips);
+          useTripStore.getState().setTrips(merged);
+        });
       }
     });
 

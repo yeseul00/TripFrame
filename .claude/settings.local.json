@@ -90,7 +90,15 @@
       "Bash(pnpm --filter mobile web)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in d.get\\('dependencies',{}\\).items\\(\\) if 'expo' in k or 'webpack' in k or 'metro' in k}, indent=2\\)\\)\")",
       "Bash(npx vercel:*)",
-      "Bash(bash /Users/seul/DEVELOPER/TripFrame/.specify/scripts/bash/setup-plan.sh --json)"
+      "Bash(bash /Users/seul/DEVELOPER/TripFrame/.specify/scripts/bash/setup-plan.sh --json)",
+      "Bash(pnpm --filter mobile exec tsc --noEmit)",
+      "Bash(pnpm web:*)",
+      "Read(//private/tmp/**)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh --json)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('expo',{}\\).get\\('scheme'\\), indent=2\\)\\); print\\(json.dumps\\(d.get\\('expo',{}\\).get\\('android',{}\\).get\\('intentFilters'\\), indent=2\\)\\)\")",
+      "Bash(pnpm --filter mobile tsc --noEmit)",
+      "Bash(ls /Users/seul/DEVELOPER/TripFrame/tripframe/apps/mobile/app.config.*)",
+      "Bash(pnpm approve-builds:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

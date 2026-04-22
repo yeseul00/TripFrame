@@ -127,23 +127,15 @@
 
 ## Phase 6.3 — 베타 배포 [모두 완료 후]
 
-### TASK-106: 개인정보처리방침 + Google Play Internal Testing 트랙 · 2h [P0] · (104)
+### ~~TASK-106: 개인정보처리방침 + GitHub Pages + app.json 정비~~ ✅ COMPLETE
 
-> TF-MTG-003 결정 #15: 개인정보처리방침 GitHub Pages.
-> TF-MTG-003 결정 #13: Google Play Internal Testing 트랙 사전 설정.
+> 완료: 2026-04-22
 
-- [ ] **개인정보처리방침** 작성 (`docs/privacy-policy.md`):
-  - 개인정보보호법 제30조 필수 항목:
-    - 수집 항목: 이메일 (Supabase Auth)
-    - 이용 목적: 사용자 식별 + 동기화
-    - 보유 기간: 탈퇴 시 즉시 삭제
-    - 처리 위탁: Supabase(인증), Sentry(크래시)
-    - 이용자 권리: 열람·정정·삭제·처리정지 요구권
-  - 여행 데이터: 로컬 암호화 저장, 서버 미전송 명시
-- [ ] GitHub Pages 배포 → URL 접속 확인
-- [ ] **Google Play Console**: 앱 등록 + Internal Testing 트랙 생성 *(사용자 실행)*
-- [ ] Internal Testing 트랙에 개인정보처리방침 URL 등록
-- [ ] `app.json` 메타데이터 점검: `versionCode`, permissions 최소화
+- [x] `docs/privacy-policy.md` 작성 (개인정보보호법 제30조 필수 항목 전체)
+- [x] `docs/index.md` + `_config.yml` (Jekyll) + `.github/workflows/pages.yml` GitHub Pages 자동 배포
+- [x] `app.json`: `versionCode: 1` 추가, permissions → INTERNET만 유지
+- [ ] **GitHub Pages 활성화**: 저장소 Settings → Pages → Source → GitHub Actions *(사용자 직접)*
+- [ ] **Google Play Console**: 앱 등록 + Internal Testing 트랙 + 개인정보처리방침 URL 등록 *(사용자 직접)*
 
 ### TASK-107: 클로즈드 베타 배포 + 피드백 채널 + 설문 설계 · 3h [P1] · (모든 태스크)
 

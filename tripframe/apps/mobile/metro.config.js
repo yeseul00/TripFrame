@@ -12,7 +12,13 @@ config.resolver.platforms = ['ios', 'android', 'native', 'web'];
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (platform === 'web' && moduleName === 'react-native-android-widget') {
     return {
-      filePath: require('path').resolve(__dirname, 'src/widget/android-widget-stub.js'),
+      filePath: path.resolve(__dirname, 'src/widget/android-widget-stub.js'),
+      type: 'sourceFile',
+    };
+  }
+  if (platform === 'web' && moduleName === '@sentry/react-native') {
+    return {
+      filePath: path.resolve(__dirname, 'src/lib/sentry-stub.ts'),
       type: 'sourceFile',
     };
   }

@@ -87,15 +87,15 @@
 - [x] SharedPreferences 데이터 브릿지: useTripStore → SharedPreferences 쓰기 → 위젯 읽기
 - [x] **웹 빌드 호환**: `registerWidget.web.ts`, `android-widget-stub.js`, `metro.config.js` resolveRequest 스텁 추가
 
-### TASK-103: D-day 위젯 완성 · 3~4h [P1] · (102)
+### ~~TASK-103: D-day 위젯 완성 · 3~4h [P1] · (102)~~ ✅ COMPLETE
 
-> **경로 A 실행** (POC 성공).
+> **경로 A 실행** (POC 성공). 완료: 2026-04-22
 
-- [ ] 다음 여행 선택 로직: 출발일 기준 가장 가까운 미래 여행 자동 선택
-- [ ] 위젯 UI: D-day 숫자(#A78BFA, 대형) + 여행명(white) + 출발 시각(#9CA3AF, small)
-- [ ] 여행 없을 때: "여행을 추가하세요" 플레이스홀더
-- [ ] 위젯 탭 딥링크: `tripframe://trip/{tripId}` → 해당 여행 일정 화면
-- [ ] Maestro 시나리오: 위젯 탭 → 앱 진입 딥링크 확인
+- [x] 다음 여행 선택 로직: 출발일 기준 가장 가까운 미래 여행 자동 선택
+- [x] 위젯 UI: D-day 숫자(#A78BFA, 대형) + 여행명(white) + 출발 시각(#9CA3AF, small)
+- [x] 여행 없을 때: "여행을 추가하세요" 플레이스홀더
+- [x] 위젯 탭 딥링크: `tripframe://trip/{tripId}` → 해당 여행 일정 화면
+- [x] Maestro 시나리오: `.maestro/widget_deeplink.yaml`
 
 ---
 

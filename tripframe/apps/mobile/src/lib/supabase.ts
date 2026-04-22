@@ -1,6 +1,8 @@
 import 'react-native-url-polyfill/auto';
+import { Platform } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import { encryptedStorage } from '../storage/encryptedStorage';
+
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
@@ -17,7 +19,9 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
         storage: encryptedStorage,
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: false,
+        // 웹: OAuth 리다이렉트 복귀 시 URL에서 세션 자동 감지
+        // 네이티브: expo-auth-session이 직접 처리하므로 false
+        detectSessionInUrl: Platform.OS === 'web',
       },
     })
   : null;

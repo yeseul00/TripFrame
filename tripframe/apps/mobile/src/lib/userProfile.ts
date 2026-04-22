@@ -20,44 +20,37 @@ type UserProfileUpdates = {
   time_buffer?: TimeBuffer;
 };
 
+/**
+ * 프로필이 없으면 생성, 있으면 그대로 반환.
+ * - maybeSingle(): row 없으면 null 반환 (single()은 없으면 406 에러)
+ * - upsert + ignoreDuplicates: 동시 호출 시 중복 INSERT(409) 방지
+ */
 export async function ensureUserProfile(userId: string): Promise<UserProfile | null> {
   if (!supabase) return null;
-  const { data: existing } = await supabase
+
+  // 충돌 시 무시하고 기존 row 유지
+  await supabase
     .from('user_profiles')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
+    .upsert([{ user_id: userId }], { onConflict: 'user_id', ignoreDuplicates: true });
 
-  if (existing) return existing as UserProfile;
-
-  const { data: created, error } = await supabase
-    .from('user_profiles')
-    .insert([{ user_id: userId }] as never)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('[userProfile] 프로필 생성 실패:', error.message);
-    return null;
-  }
-
-  return created as UserProfile;
+  return getUserProfile(userId);
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   if (!supabase) return null;
+
   const { data, error } = await supabase
     .from('user_profiles')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('[userProfile] 프로필 조회 실패:', error.message);
     return null;
   }
 
-  return data as UserProfile;
+  return data as UserProfile | null;
 }
 
 export async function updateUserProfile(
@@ -65,17 +58,18 @@ export async function updateUserProfile(
   updates: UserProfileUpdates,
 ): Promise<UserProfile | null> {
   if (!supabase) return null;
+
   const { data, error } = await supabase
     .from('user_profiles')
     .update({ ...updates, updated_at: new Date().toISOString() } as never)
     .eq('user_id', userId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('[userProfile] 프로필 업데이트 실패:', error.message);
     return null;
   }
 
-  return data as UserProfile;
+  return data as UserProfile | null;
 }

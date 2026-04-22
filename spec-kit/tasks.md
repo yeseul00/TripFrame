@@ -101,16 +101,16 @@
 
 ## Phase 6.2 — 품질 + Quick Win [TASK-101 완료 후, 병렬 가능]
 
-### TASK-104: Sentry 기본 연동 · 2h [P1]
+### ~~TASK-104: Sentry 기본 연동 · 2h [P1]~~ ✅ COMPLETE
 
-> TF-MTG-003 결정 #14: 크래시 리포팅만. 성능 모니터링은 Phase 7. 무료 티어(5K 이벤트/월).
+> TF-MTG-003 결정 #14: 크래시 리포팅만. 성능 모니터링은 Phase 7. 완료: 2026-04-22
 
-- [ ] `@sentry/react-native` 설치 + EAS Build config plugin 설정
-- [ ] `app.config.ts` 생성/확장: `SENTRY_DSN` 환경변수 주입 *(하드코딩 절대 금지)*
-- [ ] `App.tsx` `Sentry.init()` 추가 (development 환경 제외)
-- [ ] EAS Secrets에 `SENTRY_DSN` 등록
-- [ ] preview 빌드에서 의도적 예외 발생 → Sentry 대시보드 확인
-- [ ] crash-free rate 100% 초기 확인
+- [x] `@sentry/react-native` 설치 + `app.config.ts`에 EAS Build config plugin 설정
+- [x] `app.config.ts` 생성: `SENTRY_DSN` env 주입 → `extra.sentryDsn`으로 런타임 접근
+- [x] `App.tsx`: `Sentry.init()` (NODE_ENV !== 'development') + `Sentry.wrap(App)` export
+- [ ] EAS Secrets에 `SENTRY_DSN` / `SENTRY_ORG` / `SENTRY_PROJECT` 등록 *(사용자 직접)*
+- [ ] preview 빌드에서 의도적 예외 발생 → Sentry 대시보드 확인 *(사용자 직접)*
+- [ ] crash-free rate 100% 초기 확인 *(사용자 직접)*
 
 ### TASK-105: 여행 카드 숨기기 (isHidden) · 2h [P2]
 

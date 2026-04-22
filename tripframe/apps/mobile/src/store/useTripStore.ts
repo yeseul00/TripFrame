@@ -20,6 +20,7 @@ export function setStoreUserId(id: string | null) {
 interface TripStore {
   currentTab: TabName;
   trips: Trip[];
+  hiddenTripIds: string[];
   currentTripId: string | null;
   selectedDayIndex: number;
   reverseCalc: ReverseCalcResult;
@@ -44,6 +45,8 @@ interface TripStore {
   deleteTrip: (id: string) => void;
   selectTrip: (id: string | null) => void;
   setTrips: (trips: Trip[]) => void;
+  hideTrip: (id: string) => void;
+  unhideTrip: (id: string) => void;
 
   // Event actions
   addEvent: (tripId: string, dayIndex: number, event: TripEvent) => void;
@@ -57,6 +60,7 @@ export const useTripStore = create<TripStore>()(
     (set, get) => ({
       currentTab: '홈',
       trips: [MOCK_TRIP],
+      hiddenTripIds: [],
       currentTripId: null,
       selectedDayIndex: 0,
       reverseCalc: MOCK_REVERSE_CALC,
@@ -123,6 +127,18 @@ export const useTripStore = create<TripStore>()(
 
       // Realtime 수신 또는 로그인 시 원격 데이터 병합에 사용
       setTrips: (trips) => set({ trips }),
+
+      hideTrip: (id) =>
+        set((state) => ({
+          hiddenTripIds: state.hiddenTripIds.includes(id)
+            ? state.hiddenTripIds
+            : [...state.hiddenTripIds, id],
+        })),
+
+      unhideTrip: (id) =>
+        set((state) => ({
+          hiddenTripIds: state.hiddenTripIds.filter((hid) => hid !== id),
+        })),
 
       addEvent: (tripId, dayIndex, event) => {
         set((state) => ({
@@ -197,6 +213,7 @@ export const useTripStore = create<TripStore>()(
       storage: createJSONStorage(() => encryptedStorage),
       partialize: (state) => ({
         trips: state.trips,
+        hiddenTripIds: state.hiddenTripIds,
         currentTripId: state.currentTripId,
       }),
       onRehydrateStorage: () => (state) => {

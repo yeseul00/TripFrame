@@ -14,6 +14,7 @@ interface TripCardProps {
   onPress: () => void;
   onEdit: () => void;
   onExport: () => void;
+  onHide: () => void;
 }
 
 function getDDay(startDate: string): string {
@@ -27,7 +28,7 @@ function getDDay(startDate: string): string {
   return `D+${Math.abs(diff)}`;
 }
 
-function TripCard({ trip, onPress, onEdit, onExport }: TripCardProps) {
+function TripCard({ trip, onPress, onEdit, onExport, onHide }: TripCardProps) {
   const gapCount = trip.timelines.flatMap((t) => t.gaps).length;
   const dDay = getDDay(trip.startDate);
 
@@ -53,8 +54,8 @@ function TripCard({ trip, onPress, onEdit, onExport }: TripCardProps) {
           onPress={() => {
             if (Platform.OS === 'ios') {
               ActionSheetIOS.showActionSheetWithOptions(
-                { options: ['취소', '편집', '내보내기 (.ics)'], cancelButtonIndex: 0 },
-                (idx) => { if (idx === 1) onEdit(); if (idx === 2) onExport(); },
+                { options: ['취소', '편집', '내보내기 (.ics)', '숨기기'], cancelButtonIndex: 0 },
+                (idx) => { if (idx === 1) onEdit(); if (idx === 2) onExport(); if (idx === 3) onHide(); },
               );
             } else if (Platform.OS === 'web') {
               onEdit();
@@ -62,6 +63,7 @@ function TripCard({ trip, onPress, onEdit, onExport }: TripCardProps) {
               Alert.alert('여행 옵션', undefined, [
                 { text: '편집', onPress: onEdit },
                 { text: '내보내기 (.ics)', onPress: onExport },
+                { text: '숨기기', onPress: onHide },
                 { text: '취소', style: 'cancel' },
               ]);
             }
@@ -91,14 +93,16 @@ function TripCard({ trip, onPress, onEdit, onExport }: TripCardProps) {
 
 export function HomeScreen({ onSelectTrip }: HomeScreenProps) {
   const trips = useTripStore((state) => state.trips);
+  const hiddenTripIds = useTripStore((state) => state.hiddenTripIds);
+  const hideTrip = useTripStore((state) => state.hideTrip);
   const [showForm, setShowForm] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [exportingTrip, setExportingTrip] = useState<Trip | null>(null);
 
-  // 출발일 역순 정렬 (최신 우선)
-  const sortedTrips = [...trips].sort(
-    (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-  );
+  // 숨긴 여행 제외 후 출발일 역순 정렬
+  const sortedTrips = trips
+    .filter((t) => !hiddenTripIds.includes(t.id))
+    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 
   function openCreate() {
     setEditingTrip(null);
@@ -141,6 +145,7 @@ export function HomeScreen({ onSelectTrip }: HomeScreenProps) {
             onPress={() => onSelectTrip(trip.id)}
             onEdit={() => openEdit(trip)}
             onExport={() => setExportingTrip(trip)}
+            onHide={() => hideTrip(trip.id)}
           />
         ))}
 

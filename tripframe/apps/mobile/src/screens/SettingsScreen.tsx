@@ -7,6 +7,7 @@ import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { useSettingsStore } from '../store/useSettingsStore';
 import type { LuggageSize, TransportPreference, BufferLevel } from '../store/useSettingsStore';
 import type { SyncStatus } from '../hooks/useRealtimeSync';
+import { useTripStore } from '../store/useTripStore';
 
 type OptionItem<T extends string> = { label: string; value: T; desc: string };
 
@@ -159,9 +160,49 @@ export function SettingsScreen({ syncStatus = 'idle' }: SettingsScreenProps) {
         onChange={(v) => updateSettings({ bufferLevel: v })}
       />
 
+      {/* 숨긴 여행 관리 */}
+      <HiddenTripsSection />
+
       {/* 피드백 */}
       <FeedbackSection userId={userId} />
     </ScrollView>
+  );
+}
+
+function HiddenTripsSection() {
+  const trips = useTripStore((state) => state.trips);
+  const hiddenTripIds = useTripStore((state) => state.hiddenTripIds);
+  const unhideTrip = useTripStore((state) => state.unhideTrip);
+
+  const hiddenTrips = trips.filter((t) => hiddenTripIds.includes(t.id));
+
+  if (hiddenTrips.length === 0) return null;
+
+  return (
+    <View className="mb-6 pt-6 border-t border-gray-800">
+      <Text className="text-muted text-xs uppercase tracking-widest mb-3">숨긴 여행 관리</Text>
+      <View className="gap-2">
+        {hiddenTrips.map((trip) => (
+          <View
+            key={trip.id}
+            className="flex-row items-center justify-between p-4 rounded-xl border border-gray-800 bg-card"
+          >
+            <View className="flex-1 mr-3">
+              <Text className="text-white font-medium">{trip.title}</Text>
+              <Text className="text-muted text-xs mt-0.5">
+                {trip.startDate} ~ {trip.endDate}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => unhideTrip(trip.id)}
+              className="px-3 py-1.5 rounded-lg bg-gray-800"
+            >
+              <Text className="text-muted text-sm">숨기기 해제</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }
 

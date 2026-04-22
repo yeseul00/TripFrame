@@ -112,19 +112,16 @@
 - [ ] preview 빌드에서 의도적 예외 발생 → Sentry 대시보드 확인 *(사용자 직접)*
 - [ ] crash-free rate 100% 초기 확인 *(사용자 직접)*
 
-### TASK-105: 여행 카드 숨기기 (isHidden) · 2h [P2]
+### ~~TASK-105: 여행 카드 숨기기 (isHidden) · 2h [P2]~~ ✅ COMPLETE
 
-> TASK-091 이월. Quick Win. TF-MTG-003 전원 동의. Constitution 준수: useTripStore 확장.
+> TASK-091 이월. 완료: 2026-04-22
 
-- [ ] `useTripStore.ts`:
-  - `hiddenTripIds: string[]` 상태 추가
-  - `hideTrip(id: string)` / `unhideTrip(id: string)` 액션 추가
-  - encryptedStorage persist (기존 패턴)
-- [ ] 홈 화면: `hiddenTripIds` 필터링 (숨긴 카드 미표시)
-- [ ] 여행 카드 ··· 메뉴: "숨기기" / "숨기기 해제" 토글 옵션
-- [ ] 설정 화면: "숨긴 여행 관리" 섹션 → 숨긴 여행 목록 + 개별 해제 버튼
-- [ ] 단위 테스트 2개: hide/unhide 상태 전환 + persist 복원
-- [ ] 앱 재시작 후 숨김 상태 유지 확인
+- [x] `useTripStore.ts`: `hiddenTripIds`, `hideTrip`, `unhideTrip`, persist 포함
+- [x] 홈 화면: `hiddenTripIds` 필터링 (숨긴 카드 미표시)
+- [x] 여행 카드 ··· 메뉴: "숨기기" 옵션 (iOS ActionSheet + Android Alert)
+- [x] 설정 화면: `HiddenTripsSection` — 숨긴 여행 목록 + 개별 해제 버튼
+- [x] 단위 테스트 5개 통과 (`src/store/__tests__/useTripStore.hiddenTrips.test.ts`)
+- [x] persist partialize 포함 → 앱 재시작 후 숨김 상태 유지
 
 ---
 

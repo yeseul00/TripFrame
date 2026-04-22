@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Platform, View, Text, TouchableOpacity, ActivityIndicator, Modal, ScrollView } from 'react-native';
+import * as Sentry from '@sentry/react-native';
+import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import { useTripStore, setStoreUserId } from './src/store/useTripStore';
 import type { TabName } from './src/store/useTripStore';
@@ -20,6 +22,19 @@ import { TripWidgetProvider } from './src/widget/TripWidgetProvider';
 import type { Session } from '@supabase/supabase-js';
 import './global.css';
 
+// development 빌드에서는 Sentry 비활성화 (노이즈 방지)
+// DSN은 app.config.ts의 extra.sentryDsn → EAS Secrets에서 주입
+const _sentryDsn: string = (Constants.expoConfig?.extra as { sentryDsn?: string })?.sentryDsn ?? '';
+if (_sentryDsn && process.env.NODE_ENV !== 'development') {
+  Sentry.init({
+    dsn: _sentryDsn,
+    // 크래시 리포팅만 — 성능 모니터링은 Phase 7
+    tracesSampleRate: 0,
+    // 개인정보 보호: 사용자 IP 수집 안 함
+    sendDefaultPii: false,
+  });
+}
+
 const TABS: { key: TabName; label: string; icon: string }[] = [
   { key: '홈', label: '홈', icon: '🏠' },
   { key: '일정', label: '일정', icon: '🗺️' },
@@ -27,7 +42,7 @@ const TABS: { key: TabName; label: string; icon: string }[] = [
   { key: '마이', label: '마이', icon: '👤' },
 ];
 
-export default function App() {
+function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
   const [keyMigrating, setKeyMigrating] = useState(true);
@@ -273,6 +288,8 @@ export default function App() {
     </View>
   );
 }
+
+export default Sentry.wrap(App);
 
 /** 여행이 선택되지 않았을 때 표시되는 플레이스홀더 */
 function NoTripPlaceholder({ onGoHome }: { onGoHome: () => void }) {

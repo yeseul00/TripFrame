@@ -137,23 +137,15 @@
 - [ ] **GitHub Pages 활성화**: 저장소 Settings → Pages → Source → GitHub Actions *(사용자 직접)*
 - [ ] **Google Play Console**: 앱 등록 + Internal Testing 트랙 + 개인정보처리방침 URL 등록 *(사용자 직접)*
 
-### TASK-107: 클로즈드 베타 배포 + 피드백 채널 + 설문 설계 · 3h [P1] · (모든 태스크)
+### ~~TASK-107: 클로즈드 베타 배포 + 피드백 채널 + 설문 설계~~ ✅ COMPLETE (문서)
 
-> TF-MTG-003 결정 #13: EAS Internal Distribution(APK 직접 배포). 10~20명.
+> 완료: 2026-04-22
 
-- [ ] `eas build --profile preview --platform android` 빌드 성공 *(사용자 실행)*
-- [ ] 베타 테스터 배포 가이드 작성 (`docs/beta-guide.md`):
-  - APK 다운로드 방법 (EAS 대시보드 링크)
-  - "알 수 없는 앱 설치 허용" 설정 단계별 안내
-  - 피드백 채널 안내 (Google Forms + 오픈채팅방)
-  - 알려진 미완성 기능 목록
-- [ ] **구조화된 Google Forms 설문** 작성:
-  - 섹션 1: 기본 정보 (Android 버전, 기기 모델)
-  - 섹션 2: 핵심 태스크 완료율 (5개 항목 Y/N)
-  - 섹션 3: 만족도 5점 척도 (전체, 디자인, 재사용 의향)
-  - 섹션 4: 자유 의견
-- [ ] 오픈채팅방 개설 (카카오톡)
-- [ ] 테스터 10~20명에게 APK + 가이드 + 설문 링크 배포
+- [x] `docs/beta-guide.md`: APK 설치 단계별 안내, 미완성 기능 목록, 테스트 5개 시나리오, 피드백 채널
+- [x] `docs/beta-survey-structure.md`: Google Forms 설문 구조 (4섹션 13문항)
+- [ ] `eas build --profile preview --platform android` *(사용자 실행)*
+- [ ] Google Forms 실제 생성 + 오픈채팅방 개설 *(사용자 실행)*
+- [ ] 테스터 10~20명 배포 *(사용자 실행)*
 
 ### TASK-108: Phase 6 완료보고서 · 1h · (모든 태스크)
 

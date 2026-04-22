@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Platform, View, Text, TouchableOpacity, ActivityIndicator, Modal, ScrollView } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Linking, Platform, View, Text, TouchableOpacity, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useTripStore, setStoreUserId } from './src/store/useTripStore';
 import type { TabName } from './src/store/useTripStore';
@@ -99,6 +99,25 @@ export default function App() {
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  // 딥링크 핸들러: tripframe://trip/{tripId} → 해당 여행 선택 + 일정 탭 이동
+  const handleDeepLink = useCallback((url: string) => {
+    const match = url.match(/^tripframe:\/\/trip\/(.+)$/);
+    if (!match) return;
+    const tripId = match[1];
+    selectTrip(tripId);
+    setCurrentTab('일정');
+  }, [selectTrip, setCurrentTab]);
+
+  useEffect(() => {
+    // 앱이 종료 상태에서 딥링크로 열린 경우
+    Linking.getInitialURL().then((url) => {
+      if (url) handleDeepLink(url);
+    });
+    // 앱이 백그라운드에서 포그라운드로 올라올 때
+    const sub = Linking.addEventListener('url', ({ url }) => handleDeepLink(url));
+    return () => sub.remove();
+  }, [handleDeepLink]);
 
   // trips 변경 시 위젯 데이터 동기화 (Android only)
   useEffect(() => {

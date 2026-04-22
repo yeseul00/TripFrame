@@ -1,0 +1,23 @@
+appId: com.anonymous.tripframe
+---
+# TASK-103: D-day 위젯 딥링크 시나리오
+# 위젯 탭(OPEN_URI) → tripframe://trip/{tripId} → 앱 진입 후 일정 탭 표시 확인
+#
+# 사전 조건:
+#   - 앱 설치 완료 (npx expo run:android)
+#   - 여행이 1개 이상 등록된 상태
+#
+# 실행: maestro test .maestro/widget_deeplink.yaml
+
+- launchApp:
+    clearState: false
+
+# 홈 탭에서 여행이 존재하는지 확인
+- assertVisible: "홈"
+
+# 딥링크로 위젯 탭 진입 시뮬레이션
+# (실제 위젯 탭은 Android 홈 화면 필요 → openLink로 대체)
+- openLink: "tripframe://trip/test-trip-id"
+
+# 앱이 포그라운드로 올라오고 일정 탭이 활성화되어야 함
+- assertVisible: "일정"

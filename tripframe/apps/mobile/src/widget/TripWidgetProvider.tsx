@@ -19,8 +19,13 @@ export function TripWidgetProvider({ data }: Props) {
   const dDayText = hasTrip ? formatDDay(data!.dDay) : 'D-?';
   const titleText = hasTrip ? data!.tripTitle : '여행을 추가하세요';
 
+  const clickAction = hasTrip ? 'OPEN_URI' : 'OPEN_APP';
+  const clickActionData = hasTrip ? { uri: `tripframe://trip/${data!.tripId}` } : undefined;
+
   return (
     <FlexWidget
+      clickAction={clickAction}
+      clickActionData={clickActionData}
       style={{
         height: 'match_parent',
         width: 'match_parent',

@@ -5,6 +5,7 @@ import type { Trip } from '@tripframe/core';
 export const WIDGET_DATA_KEY = '@tripframe/widget-data';
 
 export interface WidgetData {
+  tripId: string;
   tripTitle: string;
   /** 양수 = D-n(출발 전), 0 = D-DAY, 음수 = D+n(여행 중) */
   dDay: number;
@@ -22,13 +23,13 @@ export function buildWidgetData(trips: Trip[]): WidgetData {
 
   const next = upcoming[0]?.trip ?? null;
   if (!next) {
-    return { tripTitle: '', dDay: 0, departureDate: '', hasTrip: false };
+    return { tripId: '', tripTitle: '', dDay: 0, departureDate: '', hasTrip: false };
   }
 
   const dDay = differenceInCalendarDays(parseISO(next.startDate), today);
   const date = parseISO(next.startDate);
   const departureDate = `${date.getMonth() + 1}/${date.getDate()}`;
-  return { tripTitle: next.title, dDay, departureDate, hasTrip: true };
+  return { tripId: next.id, tripTitle: next.title, dDay, departureDate, hasTrip: true };
 }
 
 export async function syncWidgetData(trips: Trip[]): Promise<void> {

@@ -65,7 +65,7 @@ TripFrame(이하 "앱")은 이용자의 개인정보를 소중히 여기며, 개
 |------|------|
 | 성명 | TripFrame 개발팀 |
 | 이메일 | (GitHub Issues를 통해 연락) |
-| GitHub | https://github.com/yes0204/TripFrame/issues |
+| GitHub | https://github.com/yeseul00/TripFrame/issues |
 
 ---
 

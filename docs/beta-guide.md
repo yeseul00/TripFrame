@@ -6,6 +6,29 @@
 
 ---
 
+## [개발자용] EAS Preview 빌드 방법
+
+> 테스터에게 APK를 배포하기 전에 먼저 아래 절차로 빌드합니다.
+
+```bash
+# 1. EAS CLI 로그인 (최초 1회)
+npm install -g eas-cli
+eas login   # seuldoo 계정으로 로그인
+
+# 2. preview APK 빌드 (Android)
+cd tripframe/apps/mobile
+eas build --profile preview --platform android
+```
+
+빌드 완료 후:
+1. EAS 대시보드(expo.dev) → 프로젝트 → Builds → 최신 빌드 선택
+2. **Download** 버튼 → APK 다운로드
+3. 다운로드 URL을 카카오 오픈채팅방에 공유
+
+> **versionCode** 올릴 때: `tripframe/apps/mobile/app.json`의 `"versionCode"` 값을 1씩 증가 후 빌드
+
+---
+
 ## 1. APK 다운로드 및 설치
 
 ### Step 1 — APK 다운로드

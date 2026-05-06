@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Modal, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 import { updateUserProfile, ensureUserProfile } from '../lib/userProfile';
 import type { UserProfile } from '../lib/userProfile';
@@ -75,6 +76,7 @@ interface SettingsScreenProps {
 }
 
 export function SettingsScreen({ syncStatus = 'idle' }: SettingsScreenProps) {
+  const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const { promptAsync, isReady } = useGoogleAuth();
@@ -100,7 +102,7 @@ export function SettingsScreen({ syncStatus = 'idle' }: SettingsScreenProps) {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-4 pb-10">
+    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pb-10" style={{ paddingTop: insets.top }}>
 
       {/* 계정 섹션 */}
       <View className="mb-8 p-4 rounded-xl bg-card border border-gray-800">
@@ -213,15 +215,30 @@ function FeedbackSection({ userId }: { userId: string | null }) {
   const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit() {
-    if (rating === 0) return;
-    if (!supabase) return;
-    await supabase.from('feedback').insert([{
-      user_id: userId ?? null,
-      rating,
-      comment: comment.trim() || null,
-      app_version: '2.0.0',
-    }] as never);
-    setSubmitted(true);
+    // BUG-09 — silent return 제거 + 사용자 피드백 명확화
+    try {
+      if (rating === 0) {
+        Alert.alert('별점 선택 필요', '1~5점 중 별점을 먼저 선택해 주세요.');
+        return;
+      }
+      if (!supabase) {
+        Alert.alert('전송 실패', '서버 연결이 구성되지 않았습니다.');
+        return;
+      }
+      const { error } = await supabase.from('feedback').insert([{
+        user_id: userId ?? null,
+        rating,
+        comment: comment.trim() || null,
+        app_version: '2.0.0',
+      }] as never);
+      if (error) {
+        Alert.alert('전송 실패', error.message);
+        return;
+      }
+      setSubmitted(true);
+    } catch (e) {
+      Alert.alert('전송 중 오류', String(e));
+    }
   }
 
   function handleClose() {
@@ -278,10 +295,9 @@ function FeedbackSection({ userId }: { userId: string | null }) {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={handleSubmit}
-                    disabled={rating === 0}
-                    className={`flex-1 py-3 rounded-xl items-center ${rating > 0 ? 'bg-primary' : 'bg-gray-800'}`}
+                    className={`flex-1 py-3 rounded-xl items-center ${rating > 0 ? 'bg-primary' : 'bg-gray-700'}`}
                   >
-                    <Text className={`text-sm font-medium ${rating > 0 ? 'text-white' : 'text-muted'}`}>제출</Text>
+                    <Text className="text-white text-sm font-medium">제출</Text>
                   </TouchableOpacity>
                 </View>
               </>

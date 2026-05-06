@@ -1,4 +1,4 @@
-import { TripEvent, Gap, GapSeverity } from '../types/trip';
+import { TripEvent, Gap, GapSeverity, DayTimeline } from '../types/trip';
 
 const WARNING_THRESHOLD_MINUTES = 30;
 
@@ -37,6 +37,21 @@ function calcSeverity(hasTransport: boolean, bufferMinutes: number): GapSeverity
 }
 
 /**
+ * location이 없을 때 EventType 기반으로 위치를 추론한다. (BUG-01)
+ * home → "집", hotel → title, transport → sub 또는 title
+ * 그 외 타입은 location이 없으면 undefined 반환 (기존 동작 유지)
+ */
+function resolveLocation(event: TripEvent): string | undefined {
+  if (event.location) return event.location;
+  switch (event.type) {
+    case 'home': return '집';
+    case 'hotel': return event.title || undefined;
+    case 'transport': return event.sub || event.title || undefined;
+    default: return undefined;
+  }
+}
+
+/**
  * 여행 일정에서 논리적인 공백(이동 수단 누락, 시간 여유 부족)을 감지합니다.
  *
  * @param events 하나의 타임라인에 속한 이벤트 목록 (time 순 정렬 전제)
@@ -49,16 +64,15 @@ export function detectGaps(events: TripEvent[]): Gap[] {
     const current = events[i];
     const next = events[i + 1];
 
-    // 위치 정보가 있고 서로 다른 장소인 경우에만 검사
-    if (!current.location || !next.location || current.location === next.location) {
-      continue;
-    }
+    const fromLoc = resolveLocation(current);
+    const toLoc = resolveLocation(next);
+
+    if (!fromLoc || !toLoc || fromLoc === toLoc) continue;
 
     const hasTransport = current.type === 'transport' || next.type === 'transport';
     const bufferMinutes = diffMinutes(current.time, next.time);
     const severity = calcSeverity(hasTransport, bufferMinutes);
 
-    // OK는 공백이 아니므로 제외
     if (severity === 'OK') continue;
 
     gaps.push({
@@ -68,8 +82,49 @@ export function detectGaps(events: TripEvent[]): Gap[] {
       severity,
       type: 'transport',
       message: severity === 'DANGER'
-        ? `${current.location}에서 ${next.location}으로 이동하는 수단이 누락된 것 같아요.`
-        : `${current.location}에서 ${next.location}까지 이동 여유가 ${bufferMinutes}분으로 부족합니다.`,
+        ? `${fromLoc}에서 ${toLoc}으로 이동하는 수단이 누락된 것 같아요.`
+        : `${fromLoc}에서 ${toLoc}까지 이동 여유가 ${bufferMinutes}분으로 부족합니다.`,
+      suggestions: ['대중교통 확인', '택시/렌터카 예약'],
+    });
+  }
+
+  return gaps;
+}
+
+/**
+ * 날짜 경계(자정)를 넘는 이동의 공백을 감지합니다. (BUG-07)
+ * Day N 마지막 이벤트 → Day N+1 첫 이벤트 간 이동수단 누락 여부 검사.
+ *
+ * @param timelines 여행 전체 타임라인 배열
+ * @returns 날짜 경계 공백(Gap) 목록
+ */
+export function detectCrossDayGaps(timelines: DayTimeline[]): Gap[] {
+  const gaps: Gap[] = [];
+
+  for (let i = 0; i < timelines.length - 1; i++) {
+    const currentDay = timelines[i];
+    const nextDay = timelines[i + 1];
+
+    const lastEvent = currentDay.events[currentDay.events.length - 1];
+    const firstEvent = nextDay.events[0];
+
+    if (!lastEvent || !firstEvent) continue;
+
+    const fromLoc = resolveLocation(lastEvent);
+    const toLoc = resolveLocation(firstEvent);
+
+    if (!fromLoc || !toLoc || fromLoc === toLoc) continue;
+
+    const hasTransport = lastEvent.type === 'transport' || firstEvent.type === 'transport';
+    if (hasTransport) continue;
+
+    gaps.push({
+      id: `gap-cross-${lastEvent.id}-${firstEvent.id}`,
+      fromEventId: lastEvent.id,
+      toEventId: firstEvent.id,
+      severity: 'DANGER',
+      type: 'transport',
+      message: `Day ${currentDay.day}에서 Day ${nextDay.day}로 넘어가는 이동 수단이 누락되었어요. (${fromLoc} → ${toLoc})`,
       suggestions: ['대중교통 확인', '택시/렌터카 예약'],
     });
   }

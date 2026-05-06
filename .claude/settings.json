@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --filter mobile exec tsc --noEmit --skipLibCheck)",
+      "Bash(EAS_SKIP_AUTO_FINGERPRINT=1 eas build --profile preview --platform android --non-interactive)",
+      "Bash(pnpm --filter @tripframe/core test -- --testPathPattern=gapEngine)"
+    ]
+  }
+}

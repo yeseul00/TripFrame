@@ -7,9 +7,9 @@
  *   TC-009, TC-010, TC-011, TC-012, TC-013, TC-014, TC-015
  */
 
-import { detectGaps, makeGapKey } from '../gapEngine';
+import { detectGaps, detectCrossDayGaps, makeGapKey } from '../gapEngine';
 import { MOCK_TRIP } from '../../data/mock';
-import { TripEvent } from '../../types/trip';
+import { TripEvent, DayTimeline } from '../../types/trip';
 
 // ─── 헬퍼 ────────────────────────────────────────────────────────────────────
 
@@ -186,6 +186,126 @@ describe('detectGaps — 경계값 및 엣지 케이스', () => {
 
     expect(gaps[0].fromEventId).toBe(from.id);
     expect(gaps[0].toEventId).toBe(to.id);
+  });
+});
+
+// ─── BUG-01: location 미입력 시 type 기반 폴백 ────────────────────────────
+
+describe('detectGaps — location 폴백 (BUG-01)', () => {
+  it('home 타입은 location 없어도 "집"으로 폴백하여 Gap을 감지한다', () => {
+    const events: TripEvent[] = [
+      makeEvent({ time: '08:00', type: 'home' }),
+      makeEvent({ time: '10:00', type: 'hotel', location: '인천공항' }),
+    ];
+    const gaps = detectGaps(events);
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0].severity).toBe('DANGER');
+    expect(gaps[0].message).toContain('집');
+  });
+
+  it('hotel 타입은 location 없으면 title을 폴백으로 사용하여 Gap을 감지한다', () => {
+    const events: TripEvent[] = [
+      makeEvent({ time: '14:00', type: 'hotel', location: '하카타' }),
+      makeEvent({ time: '16:00', type: 'hotel' }),
+    ];
+    const gaps = detectGaps(events);
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0].severity).toBe('DANGER');
+  });
+
+  it('transport 타입은 location 없으면 sub를 폴백으로 사용하여 메시지에 포함된다', () => {
+    // transport 이벤트 자체가 이동수단이므로 hasTransport=true → WARNING(버퍼 부족) 케이스
+    const events: TripEvent[] = [
+      makeEvent({ time: '09:00', type: 'hotel', location: '집' }),
+      makeEvent({ time: '09:20', type: 'transport', sub: '부산역' }), // 20분 여유 → WARNING
+    ];
+    const gaps = detectGaps(events);
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0].severity).toBe('WARNING');
+    expect(gaps[0].message).toContain('부산역');
+  });
+
+  it('activity 타입은 location 없으면 폴백 없이 Gap을 감지하지 않는다', () => {
+    const events: TripEvent[] = [
+      makeEvent({ time: '10:00', type: 'activity' }),
+      makeEvent({ time: '12:00', type: 'hotel', location: '하카타' }),
+    ];
+    const gaps = detectGaps(events);
+    expect(gaps).toHaveLength(0);
+  });
+});
+
+// ─── BUG-07: 자정 넘는 이동 공백 감지 ─────────────────────────────────────
+
+function makeTimeline(day: number, date: string, events: TripEvent[]): DayTimeline {
+  return { day, date, events, gaps: [] };
+}
+
+describe('detectCrossDayGaps — 자정 넘는 이동 (BUG-07)', () => {
+  it('Day N 마지막↔Day N+1 첫 이벤트가 다른 위치이고 이동수단 없으면 DANGER', () => {
+    const timelines: DayTimeline[] = [
+      makeTimeline(1, '2026-06-01', [
+        makeEvent({ time: '23:30', type: 'hotel', location: '하카타' }),
+      ]),
+      makeTimeline(2, '2026-06-02', [
+        makeEvent({ time: '01:30', type: 'hotel', location: '유후인' }),
+      ]),
+    ];
+    const gaps = detectCrossDayGaps(timelines);
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0].severity).toBe('DANGER');
+    expect(gaps[0].message).toContain('하카타');
+    expect(gaps[0].message).toContain('유후인');
+  });
+
+  it('Day N 마지막 이벤트가 transport이면 이동수단 있음으로 처리 → Gap 없음', () => {
+    const timelines: DayTimeline[] = [
+      makeTimeline(1, '2026-06-01', [
+        makeEvent({ time: '23:30', type: 'transport', location: '하카타역' }),
+      ]),
+      makeTimeline(2, '2026-06-02', [
+        makeEvent({ time: '01:30', type: 'hotel', location: '유후인' }),
+      ]),
+    ];
+    expect(detectCrossDayGaps(timelines)).toHaveLength(0);
+  });
+
+  it('Day N+1 첫 이벤트가 transport이면 이동수단 있음으로 처리 → Gap 없음', () => {
+    const timelines: DayTimeline[] = [
+      makeTimeline(1, '2026-06-01', [
+        makeEvent({ time: '23:30', type: 'hotel', location: '하카타' }),
+      ]),
+      makeTimeline(2, '2026-06-02', [
+        makeEvent({ time: '00:30', type: 'transport', location: '유후인행 버스' }),
+      ]),
+    ];
+    expect(detectCrossDayGaps(timelines)).toHaveLength(0);
+  });
+
+  it('연속 Day의 위치가 같으면 Gap 없음', () => {
+    const timelines: DayTimeline[] = [
+      makeTimeline(1, '2026-06-01', [makeEvent({ time: '22:00', type: 'hotel', location: '하카타' })]),
+      makeTimeline(2, '2026-06-02', [makeEvent({ time: '08:00', type: 'hotel', location: '하카타' })]),
+    ];
+    expect(detectCrossDayGaps(timelines)).toHaveLength(0);
+  });
+
+  it('Day에 이벤트가 없으면 Gap 없음', () => {
+    const timelines: DayTimeline[] = [
+      makeTimeline(1, '2026-06-01', []),
+      makeTimeline(2, '2026-06-02', [makeEvent({ time: '08:00', location: '유후인' })]),
+    ];
+    expect(detectCrossDayGaps(timelines)).toHaveLength(0);
+  });
+
+  it('home 타입 폴백과 조합하여 자정 이동 감지', () => {
+    const timelines: DayTimeline[] = [
+      makeTimeline(1, '2026-06-01', [makeEvent({ time: '23:00', type: 'home' })]),
+      makeTimeline(2, '2026-06-02', [makeEvent({ time: '06:00', type: 'hotel', location: '공항' })]),
+    ];
+    const gaps = detectCrossDayGaps(timelines);
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0].message).toContain('집');
   });
 });
 

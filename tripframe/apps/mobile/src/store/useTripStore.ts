@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { encryptedStorage } from '../storage/encryptedStorage';
-import { Trip, DayTimeline, TripEvent } from '@tripframe/core';
+import { Trip, DayTimeline, TripEvent, detectCrossDayGaps } from '@tripframe/core';
 import { MOCK_TRIP, MOCK_REVERSE_CALC } from '@tripframe/core';
 import type { ReverseCalcResult } from '@tripframe/core';
 import { syncEngine } from '../lib/supabaseSync';
@@ -88,7 +88,9 @@ export const useTripStore = create<TripStore>()(
       allGaps: () => {
         const trip = get().currentTrip();
         if (!trip) return [];
-        return trip.timelines.flatMap((t) => t.gaps);
+        const perDayGaps = trip.timelines.flatMap((t) => t.gaps);
+        const crossDayGaps = detectCrossDayGaps(trip.timelines);
+        return [...perDayGaps, ...crossDayGaps];
       },
 
       addTrip: (trip) => {

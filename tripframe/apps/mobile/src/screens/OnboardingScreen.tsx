@@ -9,7 +9,7 @@ import {
   Platform,
   type ListRenderItemInfo,
 } from 'react-native'
-import { SafeAreaView } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { encryptedStorage } from '../storage/encryptedStorage'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -94,7 +94,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   if (Platform.OS === 'web') {
     const slide = SLIDES[currentIndex]
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F13' }}>
+      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#0F0F13' }}>
         <View style={{ alignItems: 'flex-end', paddingHorizontal: 16, paddingTop: 16 }}>
           <TouchableOpacity onPress={complete}>
             <Text style={{ color: '#6B7280', fontSize: 14 }}>건너뛰기</Text>
@@ -137,7 +137,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView edges={['top']} className="flex-1 bg-background">
       {/* 건너뛰기 */}
       <View className="items-end px-4 pt-4">
         <TouchableOpacity onPress={complete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>

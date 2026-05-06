@@ -8,8 +8,10 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTripStore } from '../store/useTripStore';
 import type { TripEvent, EventType } from '@tripframe/core';
+import { EVENT_ICON_MAP, EVENT_LABEL_MAP } from '@tripframe/core';
 
 interface EventFormModalProps {
   visible: boolean;
@@ -19,14 +21,19 @@ interface EventFormModalProps {
   onClose: () => void;
 }
 
-const EVENT_TYPE_OPTIONS: { value: EventType; label: string; icon: string }[] = [
-  { value: 'flight', label: '항공편', icon: '✈' },
-  { value: 'hotel', label: '숙소', icon: '🏨' },
-  { value: 'transport', label: '교통', icon: '🚌' },
-  { value: 'activity', label: '관광/식사', icon: '📍' },
-  { value: 'home', label: '집 출발', icon: '🏠' },
-  { value: 'prep', label: '준비', icon: '📦' },
-];
+/**
+ * 폼에서 사용자가 선택할 수 있는 EventType 목록.
+ * `warning` / `free`는 사용자가 직접 추가할 수 없는 시스템 파생 타입이라 제외.
+ * 표시 순서는 사용 빈도 기준.
+ */
+const FORM_VISIBLE_TYPES: EventType[] = ['flight', 'hotel', 'transport', 'activity', 'home', 'prep'];
+
+const EVENT_TYPE_OPTIONS: { value: EventType; label: string; icon: string }[] =
+  FORM_VISIBLE_TYPES.map((value) => ({
+    value,
+    label: EVENT_LABEL_MAP[value],
+    icon: EVENT_ICON_MAP[value],
+  }));
 
 function generateEventId(): string {
   return `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -47,6 +54,7 @@ export function EventFormModal({
   event,
   onClose,
 }: EventFormModalProps) {
+  const insets = useSafeAreaInsets();
   const addEvent = useTripStore((state) => state.addEvent);
   const updateEvent = useTripStore((state) => state.updateEvent);
   const deleteEvent = useTripStore((state) => state.deleteEvent);
@@ -80,6 +88,10 @@ export function EventFormModal({
     }
     if (!form.time.trim()) {
       Alert.alert('입력 오류', '시간을 입력해 주세요. (예: 14:30)');
+      return;
+    }
+    if (['home', 'hotel', 'transport'].includes(form.type) && !form.location.trim()) {
+      Alert.alert('입력 오류', '출발지/숙소/이동수단은 장소를 입력해 주세요.\n(공백 감지에 사용됩니다)');
       return;
     }
 
@@ -135,9 +147,12 @@ export function EventFormModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-background">
-        {/* 헤더 */}
-        <View className="flex-row justify-between items-center px-4 pt-6 pb-4 border-b border-gray-800">
+      <View className="flex-1 bg-background" style={{ paddingBottom: insets.bottom }}>
+        {/* 헤더 — BUG-04 보완: 시스템 상태바 영역 침범 방지 */}
+        <View
+          className="flex-row justify-between items-center px-4 pb-4 border-b border-gray-800"
+          style={{ paddingTop: insets.top + 12 }}
+        >
           <TouchableOpacity onPress={onClose}>
             <Text className="text-muted text-base">취소</Text>
           </TouchableOpacity>

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Platform, View, Text, TouchableOpacity, ActivityIndicator, Modal, ScrollView } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
@@ -42,7 +43,8 @@ const TABS: { key: TabName; label: string; icon: string }[] = [
   { key: '마이', label: '마이', icon: '👤' },
 ];
 
-function App() {
+function AppContent() {
+  const insets = useSafeAreaInsets();
   const [session, setSession] = useState<Session | null>(null);
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
   const [keyMigrating, setKeyMigrating] = useState(true);
@@ -221,11 +223,17 @@ function App() {
 
   return (
     <View className="flex-1 bg-background">
-      <StatusBar style="light" />
+      {/*
+        BUG-04 — StatusBar 정책 통일:
+        - translucent={false}: Android에서 콘텐츠가 시스템 상태바 영역을 침범하지 않도록
+        - backgroundColor: 다크 테마 background와 일치시켜 시각적 단절 제거
+        - iOS에서는 translucent/backgroundColor가 무시되며 SafeAreaView가 처리
+      */}
+      <StatusBar style="light" backgroundColor="#0F0F13" translucent={false} />
 
       {/* Shared Top Header — trip 선택 시에만 표시 */}
       {showHeader && (
-        <View className="flex-row items-center justify-between px-4 pt-12 pb-3 border-b border-gray-800">
+        <View className="flex-row items-center justify-between px-4 pb-3 border-b border-gray-800" style={{ paddingTop: insets.top + 8 }}>
           <TouchableOpacity
             onPress={() => { selectTrip(null); setCurrentTab('홈'); }}
             className="px-3 py-1 rounded-full bg-card border border-gray-700 min-w-[60px]"
@@ -246,7 +254,7 @@ function App() {
       </View>
 
       {/* Custom Bottom Tab Bar — 4탭 (아이콘 + 라벨) */}
-      <View className="flex-row bg-card border-t border-gray-800 pb-8 pt-3 px-4 justify-around items-center">
+      <View className="flex-row bg-card border-t border-gray-800 pt-3 px-4 justify-around items-center" style={{ paddingBottom: insets.bottom + 8 }}>
         {TABS.map((tab) => {
           const isActive = currentTab === tab.key;
           return (
@@ -274,7 +282,7 @@ function App() {
         onRequestClose={closeReverseCalcModal}
       >
         <View className="flex-1 bg-background">
-          <View className="flex-row items-center justify-between px-5 pt-14 pb-3 border-b border-gray-800">
+          <View className="flex-row items-center justify-between px-5 pb-3 border-b border-gray-800" style={{ paddingTop: insets.top + 8 }}>
             <Text className="text-white text-lg font-bold">스마트 타임라인</Text>
             <TouchableOpacity onPress={closeReverseCalcModal}>
               <Text className="text-muted text-sm">닫기</Text>
@@ -286,6 +294,14 @@ function App() {
         </View>
       </Modal>
     </View>
+  );
+}
+
+function App() {
+  return (
+    <SafeAreaProvider>
+      <AppContent />
+    </SafeAreaProvider>
   );
 }
 

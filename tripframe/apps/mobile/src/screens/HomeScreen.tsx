@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, ActionSheetIOS, Platform, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActionSheetIOS, Platform, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTripStore } from '../store/useTripStore';
 import { TripFormModal } from './TripFormModal';
 import { IcalExportModal } from '../components/IcalExportModal';
@@ -19,6 +20,7 @@ interface TripCardProps {
 
 function getDDay(startDate: string): string {
   const start = new Date(startDate);
+  if (isNaN(start.getTime())) return 'D-?';
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   start.setHours(0, 0, 0, 0);
@@ -115,18 +117,34 @@ export function HomeScreen({ onSelectTrip }: HomeScreenProps) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <ScrollView className="flex-1 px-4 pt-6">
         <Text className="text-white text-2xl font-bold mb-5">내 여행</Text>
 
         {/* 스마트 액션 카드 */}
         <View className="flex-row gap-3 mb-5">
-          <TouchableOpacity className="flex-1 bg-card border border-gray-800 rounded-2xl p-4">
+          <TouchableOpacity
+            onPress={() =>
+              Alert.alert(
+                '곧 출시 예정',
+                '메일 연동 기능은 Phase 7에서 제공될 예정입니다.'
+              )
+            }
+            className="flex-1 bg-card border border-gray-800 rounded-2xl p-4"
+          >
             <Text className="text-lg mb-2">📧</Text>
             <Text className="text-white text-[13px] font-bold mb-1">메일 연동하기</Text>
             <Text className="text-muted text-[10px]">예약 내역 자동 불러오기</Text>
           </TouchableOpacity>
-          <TouchableOpacity className="flex-1 bg-card border border-gray-800 rounded-2xl p-4">
+          <TouchableOpacity
+            onPress={() =>
+              Alert.alert(
+                '곧 출시 예정',
+                'e-티켓 스캔 기능은 Phase 7에서 제공될 예정입니다.'
+              )
+            }
+            className="flex-1 bg-card border border-gray-800 rounded-2xl p-4"
+          >
             <Text className="text-lg mb-2">📸</Text>
             <Text className="text-white text-[13px] font-bold mb-1">e-티켓 스캔</Text>
             <Text className="text-muted text-[10px]">이미지로 일정 추가하기</Text>

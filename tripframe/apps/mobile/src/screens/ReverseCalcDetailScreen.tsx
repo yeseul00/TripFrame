@@ -8,14 +8,11 @@ import {
   calculateFreeTime,
   recalculateWithAlternative,
   applyBufferLevel,
+  REVERSE_STEP_ICON_MAP,
+  EVENT_ICON_MAP,
 } from '@tripframe/core';
 
-const STEP_ICONS: Record<ReverseCalcStep['type'], string> = {
-  checkin: '✈',
-  transport: '🚌',
-  buffer: '⏱',
-  prep: '🎒',
-};
+const STEP_ICONS = REVERSE_STEP_ICON_MAP;
 
 const STEP_COLORS: Record<ReverseCalcStep['type'], string> = {
   checkin: 'text-primary',
@@ -137,7 +134,7 @@ export function ReverseCalcDetailScreen() {
         <View className="mb-4 p-4 rounded-xl bg-card border border-primary/30">
           <Text className="text-primary text-xs font-medium mb-1">앵커 이벤트 (기준 시각)</Text>
           <Text className="text-white text-base font-semibold">
-            ✈ {anchorEvent?.title ?? '출발 항공편'}
+            {anchorEvent ? EVENT_ICON_MAP[anchorEvent.type] : EVENT_ICON_MAP['flight']} {anchorEvent?.title ?? '출발 항공편'}
           </Text>
           <Text className="text-primary text-3xl font-bold mt-2">{anchorTime}</Text>
           <Text className="text-gray-500 text-xs mt-1">출발 예정</Text>

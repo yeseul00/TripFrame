@@ -2,18 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useTripStore } from '../store/useTripStore';
 import { EventFormModal } from './EventFormModal';
-import { TripEvent, EventType } from '@tripframe/core';
+import { TripEvent, EVENT_ICON_MAP } from '@tripframe/core';
 
-const EVENT_ICONS: Record<EventType, string> = {
-  flight: '✈',
-  hotel: '🏨',
-  transport: '🚌',
-  home: '🏠',
-  warning: '⚠',
-  free: '☀',
-  prep: '📦',
-  activity: '📍',
-};
+const EVENT_ICONS = EVENT_ICON_MAP;
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 

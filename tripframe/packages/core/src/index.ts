@@ -12,4 +12,5 @@ export * from './logic/alternativeCalc';
 export * from './logic/applySettings';
 export * from './logic/sortOptions';
 export * from './data/transport-rules';
+export * from './data/eventIcons';
 export * from './logic/exportIcal';
